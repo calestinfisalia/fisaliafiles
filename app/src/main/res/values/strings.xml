@@ -190,7 +190,7 @@
     <string name="settings_show_hidden_desc">Display files and folders starting with a dot</string>
     <string name="settings_about_section">About</string>
     <string name="settings_app_name">Fisalia Files</string>
-    <string name="settings_app_version">Version 1.0.0</string>
+    <string name="settings_app_version">Version %1$s</string>
     <string name="settings_developer_title">Developer</string>
     <string name="settings_developer">fisalia app project by calestin fisalia</string>
     <string name="settings_about_desc">Smart, fast, and lightweight file manager with LAN/FTP/SMB support</string>

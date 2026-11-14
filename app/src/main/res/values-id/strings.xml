@@ -188,7 +188,7 @@
     <string name="settings_show_hidden_desc">Tampilkan file dan folder yang diawali titik</string>
     <string name="settings_about_section">Tentang</string>
     <string name="settings_app_name">Fisalia Files</string>
-    <string name="settings_app_version">Versi 1.0.0</string>
+    <string name="settings_app_version">Versi %1$s</string>
     <string name="settings_developer_title">Pengembang</string>
     <string name="settings_developer">fisalia app project by calestin fisalia</string>
     <string name="settings_about_desc">Pengelola file cerdas, cepat, dan ringan dengan dukungan LAN/FTP/SMB</string>

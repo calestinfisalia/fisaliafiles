@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,10 @@ fun SettingsScreen(
     val showHiddenFiles by settingsPrefs.showHiddenFiles.collectAsState()
     val wallpaperBg by settingsPrefs.wallpaperBackground.collectAsState()
     val isGridView by settingsPrefs.isGridView.collectAsState()
+    val context = LocalContext.current
+    val versionName = remember {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+    }
     var showThemeDialog by remember { mutableStateOf(false) }
 
     BackHandler {
@@ -184,7 +189,7 @@ fun SettingsScreen(
             SettingsItem(
                 icon = Icons.Default.Info,
                 title = stringResource(R.string.settings_app_name),
-                subtitle = "${stringResource(R.string.settings_app_version)}\n${stringResource(R.string.settings_about_desc)}"
+                subtitle = "${stringResource(R.string.settings_app_version, versionName)}\n${stringResource(R.string.settings_about_desc)}"
             )
 
             SettingsItem(
