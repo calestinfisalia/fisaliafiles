@@ -11,6 +11,8 @@ import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.ProtocolType
 import com.fisalia.files.data.model.StorageItem
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -532,6 +534,83 @@ class LocalFileRepository(private val context: Context) {
         list.sortedByDescending { it.size }
     }
 
+    suspend fun scanLargeStorage(
+        thresholdBytes: Long = 30 * 1024 * 1024L,
+        onProgress: (Int) -> Unit = {}
+    ): LargeStorageUsageResult = withContext(Dispatchers.IO) {
+        val root = Environment.getExternalStorageDirectory()
+        if (!root.exists() || !root.canRead()) {
+            throw IllegalStateException("Storage is not available for scanning")
+        }
+
+        val scanContext = currentCoroutineContext()
+        val visitedDirectories = mutableSetOf<String>()
+        val largeFiles = mutableListOf<FileItem>()
+        val largeFolders = mutableListOf<FileItem>()
+        var scannedEntries = 0
+
+        suspend fun scanDirectory(directory: File, depth: Int): Long {
+            scanContext.ensureActive()
+            val isPrivateAppData = directory.name == "data" && directory.parentFile?.name == "Android"
+            if (depth > 32 || !directory.exists() || !directory.canRead() || isPrivateAppData) {
+                return 0L
+            }
+            if (!visitedDirectories.add(directory.absolutePath)) return 0L
+
+            val children = directory.listFiles() ?: return 0L
+            var directorySize = 0L
+            for (child in children) {
+                scanContext.ensureActive()
+                if (child.isFile) {
+                    val size = child.length()
+                    directorySize += size
+                    if (size >= thresholdBytes) {
+                        largeFiles.add(
+                            FileItem(
+                                id = child.absolutePath,
+                                name = child.name,
+                                path = child.absolutePath,
+                                size = size,
+                                lastModified = child.lastModified(),
+                                mimeType = FileOperationsHelper.getMimeType(child),
+                                extension = child.extension,
+                                protocol = ProtocolType.LOCAL
+                            )
+                        )
+                    }
+                } else if (child.isDirectory) {
+                    val folderSize = scanDirectory(child, depth + 1)
+                    directorySize += folderSize
+                    if (folderSize >= thresholdBytes) {
+                        largeFolders.add(
+                            FileItem(
+                                id = child.absolutePath,
+                                name = child.name,
+                                path = child.absolutePath,
+                                size = folderSize,
+                                isDirectory = true,
+                                lastModified = child.lastModified(),
+                                protocol = ProtocolType.LOCAL
+                            )
+                        )
+                    }
+                }
+
+                scannedEntries++
+                if (scannedEntries % 128 == 0) onProgress(scannedEntries)
+            }
+            return directorySize
+        }
+
+        scanDirectory(root, 0)
+        onProgress(scannedEntries)
+        LargeStorageUsageResult(
+            files = largeFiles.sortedByDescending { it.size }.take(100),
+            folders = largeFolders.sortedByDescending { it.size }.take(100),
+            scannedEntries = scannedEntries
+        )
+    }
+
     suspend fun getDuplicateFiles(): List<DuplicateGroup> = withContext(Dispatchers.IO) {
         val allFiles = mutableListOf<File>()
         val root = Environment.getExternalStorageDirectory()
@@ -606,3 +685,9 @@ data class DuplicateGroup(
 ) {
     val totalDuplicateBytes: Long get() = duplicates.sumOf { it.size }
 }
+
+data class LargeStorageUsageResult(
+    val files: List<FileItem>,
+    val folders: List<FileItem>,
+    val scannedEntries: Int
+)

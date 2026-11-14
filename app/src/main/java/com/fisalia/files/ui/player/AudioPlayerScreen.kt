@@ -14,14 +14,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
@@ -31,7 +33,6 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -72,7 +73,7 @@ import java.io.File
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
-fun AudioPlayerSheet(
+fun AudioPlayerScreen(
     fileItem: FileItem,
     localPlaybackFile: File? = null,
     playbackUri: Uri? = null,
@@ -133,52 +134,52 @@ fun AudioPlayerSheet(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top action bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.action_back)
+                    )
+                }
                 Text(
                     text = stringResource(R.string.player_audio_title),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
                 )
-
-                Row {
-                    IconButton(onClick = {
-                        FileOperationsHelper.openFile(context, File(fileItem.path))
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = stringResource(R.string.action_open_with)
-                        )
-                    }
-
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
-                    }
+                IconButton(onClick = {
+                    FileOperationsHelper.openFile(context, File(fileItem.path))
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = stringResource(R.string.action_open_with)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Large Art / Icon
             Box(
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(240.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(GoogleOrangeContainer),
                 contentAlignment = Alignment.Center
@@ -203,7 +204,6 @@ fun AudioPlayerSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Song Info
             Text(
                 text = fileItem.name,
                 style = MaterialTheme.typography.titleLarge,
@@ -227,7 +227,6 @@ fun AudioPlayerSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Progress Slider
             Slider(
                 value = if (totalDuration > 0) (currentPosition.toFloat() / totalDuration.toFloat()).coerceIn(0f, 1f) else 0f,
                 onValueChange = { frac ->
@@ -281,7 +280,6 @@ fun AudioPlayerSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Controls
             Row(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically

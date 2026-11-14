@@ -78,7 +78,6 @@ import com.fisalia.files.data.local.SettingsPreferences
 import com.fisalia.files.ui.components.GoogleFilesBottomNav
 import com.fisalia.files.ui.components.NavTab
 import com.fisalia.files.ui.player.ActiveMedia
-import com.fisalia.files.ui.player.AudioPlayerSheet
 import com.fisalia.files.ui.player.ImageViewerScreen
 import com.fisalia.files.ui.player.VideoPlayerScreen
 import com.fisalia.files.ui.screens.browse.BrowseScreen
@@ -146,31 +145,50 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val wallpaperBitmap: ImageBitmap? = remember(wallpaperBg) {
-                if (wallpaperBg) {
-                    try {
-                        val wm = android.app.WallpaperManager.getInstance(applicationContext)
-                        val drawable = try {
-                            wm.drawable ?: wm.peekDrawable()
-                        } catch (_: SecurityException) {
-                            wm.peekDrawable()
-                        } catch (_: Throwable) {
+            val wallpaperBitmap by androidx.compose.runtime.produceState<ImageBitmap?>(
+                initialValue = null,
+                key1 = wallpaperBg
+            ) {
+                if (!wallpaperBg) {
+                    value = null
+                    return@produceState
+                }
+
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val wallpaperManager = android.app.WallpaperManager.getInstance(applicationContext)
+                    val drawable = try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            wallpaperManager.getDrawable(android.app.WallpaperManager.FLAG_SYSTEM)
+                        } else {
+                            wallpaperManager.drawable ?: wallpaperManager.peekDrawable()
+                        }
+                    } catch (error: SecurityException) {
+                        android.util.Log.w("MainActivity", "Could not read the system wallpaper", error)
+                        try {
+                            wallpaperManager.peekDrawable()
+                        } catch (fallbackError: Exception) {
+                            android.util.Log.e("MainActivity", "Could not load the wallpaper fallback", fallbackError)
                             null
                         }
-                        if (drawable != null) {
-                            val dm = resources.displayMetrics
-                            val targetWidth = dm.widthPixels.coerceAtLeast(1)
-                            val targetHeight = dm.heightPixels.coerceAtLeast(1)
-                            val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-                            val canvas = Canvas(bitmap)
-                            drawable.setBounds(0, 0, targetWidth, targetHeight)
-                            drawable.draw(canvas)
-                            bitmap.asImageBitmap()
-                        } else null
-                    } catch (_: Throwable) {
+                    } catch (error: Exception) {
+                        android.util.Log.e("MainActivity", "Could not load the system wallpaper", error)
                         null
                     }
-                } else null
+
+                    if (drawable == null) {
+                        android.util.Log.w("MainActivity", "System wallpaper was not available")
+                        null
+                    } else {
+                        val displayMetrics = applicationContext.resources.displayMetrics
+                        val targetWidth = displayMetrics.widthPixels.coerceAtLeast(1)
+                        val targetHeight = displayMetrics.heightPixels.coerceAtLeast(1)
+                        val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(bitmap)
+                        drawable.setBounds(0, 0, targetWidth, targetHeight)
+                        drawable.draw(canvas)
+                        bitmap.asImageBitmap()
+                    }
+                }
             }
 
             FisaliaFilesTheme(
@@ -187,9 +205,9 @@ class MainActivity : ComponentActivity() {
                         )
                 ) {
                     if (wallpaperBg) {
-                        if (wallpaperBitmap != null) {
+                        wallpaperBitmap?.let { bitmap ->
                             Image(
-                                bitmap = wallpaperBitmap,
+                                bitmap = bitmap,
                                 contentDescription = null,
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -601,7 +619,8 @@ private fun MainTabContent(
     ) { page ->
         when (NavTab.entries[page]) {
             NavTab.CLEAN -> CleanScreen(
-                viewModel = cleanViewModel
+                viewModel = cleanViewModel,
+                isActive = pagerState.currentPage == NavTab.CLEAN.ordinal
             )
             NavTab.BROWSE -> BrowseScreen(
                 viewModel = browseViewModel,

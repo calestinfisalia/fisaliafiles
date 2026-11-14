@@ -74,7 +74,6 @@ import com.fisalia.files.ui.components.FileGridItem
 import com.fisalia.files.ui.components.FileListItem
 import com.fisalia.files.ui.components.RenameDialog
 import com.fisalia.files.ui.player.ActiveMedia
-import com.fisalia.files.ui.player.AudioPlayerSheet
 import com.fisalia.files.ui.player.ImageViewerScreen
 import com.fisalia.files.ui.player.VideoPlayerScreen
 import com.fisalia.files.ui.theme.GoogleBluePrimary

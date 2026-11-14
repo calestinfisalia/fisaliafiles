@@ -26,16 +26,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.FileCopy
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -44,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -74,11 +77,16 @@ import com.fisalia.files.ui.theme.GoogleRedContainer
 @Composable
 fun CleanScreen(
     viewModel: CleanViewModel,
+    isActive: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
     var showReviewLargeFiles by remember { mutableStateOf(false) }
     var showReviewDuplicates by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isActive) {
+        if (isActive) viewModel.ensureScanned()
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -111,67 +119,77 @@ fun CleanScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (state.isScanning) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = GoogleBluePrimary)
-                }
-            } else {
-                // Junk Files Card
-                CleanCard(
-                    title = stringResource(R.string.clean_junk_title),
-                    description = if (state.junkCleaned) stringResource(R.string.clean_success) else stringResource(R.string.clean_junk_desc),
-                    sizeText = if (state.junkCleaned) "0 B" else FileOperationsHelper.formatFileSize(state.totalJunkBytes),
-                    icon = Icons.Default.CleaningServices,
-                    iconTint = GoogleBluePrimary,
-                    bgTint = GoogleBlueContainer,
-                    buttonText = if (state.junkCleaned) stringResource(R.string.clean_already_clean) else stringResource(R.string.btn_clean_action),
-                    buttonEnabled = !state.junkCleaned && state.junkFiles.isNotEmpty(),
-                    onAction = { viewModel.cleanJunkFiles() }
-                )
-
-                // Large Files Card
-                CleanCard(
-                    title = stringResource(R.string.clean_large_files_title),
-                    description = stringResource(R.string.clean_large_files_desc),
-                    sizeText = FileOperationsHelper.formatFileSize(state.totalLargeBytes),
-                    icon = Icons.Default.VideoLibrary,
-                    iconTint = GoogleRed,
-                    bgTint = GoogleRedContainer,
-                    buttonText = stringResource(R.string.btn_review_files),
-                    buttonEnabled = state.largeFiles.isNotEmpty(),
-                    onAction = { showReviewLargeFiles = true }
-                )
-
-                // Duplicate Files Card
-                CleanCard(
-                    title = stringResource(R.string.clean_duplicates_title),
-                    description = stringResource(R.string.clean_duplicates_desc),
-                    sizeText = FileOperationsHelper.formatFileSize(state.totalDuplicateBytes),
-                    icon = Icons.Default.FileCopy,
-                    iconTint = GoogleGreen,
-                    bgTint = GoogleGreenContainer,
-                    buttonText = if (state.duplicateGroups.isNotEmpty()) stringResource(R.string.btn_review_files) else stringResource(R.string.btn_scan_duplicates),
-                    buttonEnabled = true,
-                    onAction = {
-                        if (state.duplicateGroups.isNotEmpty()) {
-                            showReviewDuplicates = true
-                        } else {
-                            viewModel.scanForCleanup()
-                        }
-                    }
+            if (state.isScanning || state.isScanningDuplicates) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            if (state.scanError != null) {
+                Text(
+                    text = stringResource(R.string.clean_scan_failed),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
+
+            CleanCard(
+                title = stringResource(R.string.clean_junk_title),
+                description = if (state.junkCleaned) stringResource(R.string.clean_success) else stringResource(R.string.clean_junk_desc),
+                sizeText = if (state.junkCleaned) "0 B" else FileOperationsHelper.formatFileSize(state.totalJunkBytes),
+                icon = Icons.Default.CleaningServices,
+                iconTint = GoogleBluePrimary,
+                bgTint = GoogleBlueContainer,
+                buttonText = if (state.junkCleaned) stringResource(R.string.clean_already_clean) else stringResource(R.string.btn_clean_action),
+                buttonEnabled = !state.isScanning && !state.junkCleaned && state.junkFiles.isNotEmpty(),
+                onAction = { viewModel.cleanJunkFiles() }
+            )
+
+            CleanCard(
+                title = stringResource(R.string.clean_large_files_title),
+                description = stringResource(R.string.clean_large_files_desc),
+                sizeText = FileOperationsHelper.formatFileSize(state.totalLargeBytes),
+                icon = Icons.Default.VideoLibrary,
+                iconTint = GoogleRed,
+                bgTint = GoogleRedContainer,
+                buttonText = stringResource(R.string.action_scan_storage),
+                buttonEnabled = true,
+                onAction = {
+                    showReviewLargeFiles = true
+                    viewModel.ensureLargeStorageScanned()
+                }
+            )
+
+            CleanCard(
+                title = stringResource(R.string.clean_duplicates_title),
+                description = stringResource(R.string.clean_duplicates_desc),
+                sizeText = FileOperationsHelper.formatFileSize(state.totalDuplicateBytes),
+                icon = Icons.Default.FileCopy,
+                iconTint = GoogleGreen,
+                bgTint = GoogleGreenContainer,
+                buttonText = when {
+                    state.isScanningDuplicates -> stringResource(R.string.action_scanning)
+                    state.duplicateGroups.isNotEmpty() -> stringResource(R.string.btn_review_files)
+                    else -> stringResource(R.string.btn_scan_duplicates)
+                },
+                buttonEnabled = !state.isScanning && !state.isScanningDuplicates,
+                onAction = {
+                    if (state.duplicateGroups.isNotEmpty()) {
+                        showReviewDuplicates = true
+                    } else {
+                        viewModel.scanForDuplicates()
+                    }
+                }
+            )
         }
     }
 
     if (showReviewLargeFiles) {
-        ReviewLargeFilesScreen(
-            files = state.largeFiles,
+        LargeStorageScanScreen(
+            files = state.scannedLargeFiles,
+            folders = state.largeFolders,
+            isScanning = state.isScanningLargeStorage,
+            hasScanned = state.hasScannedLargeStorage,
+            scannedEntryCount = state.scannedEntryCount,
+            errorMessage = state.largeStorageScanError,
+            onScan = { viewModel.scanLargeStorage() },
             onDismiss = { showReviewLargeFiles = false },
             onDeleteSelected = { selected ->
                 viewModel.deleteLargeFiles(selected)
@@ -280,8 +298,14 @@ private fun CleanCard(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun ReviewLargeFilesScreen(
+private fun LargeStorageScanScreen(
     files: List<FileItem>,
+    folders: List<FileItem>,
+    isScanning: Boolean,
+    hasScanned: Boolean,
+    scannedEntryCount: Int,
+    errorMessage: String?,
+    onScan: () -> Unit,
     onDismiss: () -> Unit,
     onDeleteSelected: (List<FileItem>) -> Unit
 ) {
@@ -296,7 +320,7 @@ private fun ReviewLargeFilesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.review_large_files_title),
+                        text = stringResource(R.string.large_storage_scan_title),
                         fontWeight = FontWeight.SemiBold
                     )
                 },
@@ -305,6 +329,14 @@ private fun ReviewLargeFilesScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onScan, enabled = !isScanning) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.action_scan_storage)
                         )
                     }
                 },
@@ -347,52 +379,143 @@ private fun ReviewLargeFilesScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.review_large_files_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                TextButton(onClick = {
-                    if (selectedFiles.size == files.size) {
-                        selectedFiles.clear()
-                    } else {
-                        selectedFiles.clear()
-                        selectedFiles.addAll(files)
-                    }
-                }) {
-                    Text(if (selectedFiles.size == files.size) stringResource(R.string.action_clear_selection) else stringResource(R.string.action_select_all))
-                }
-            }
+        Text(
+            text = stringResource(R.string.large_storage_scan_description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
 
-            Spacer(modifier = Modifier.height(8.dp))
+        if (isScanning) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Text(
+                text = stringResource(R.string.large_storage_scan_progress, scannedEntryCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+            )
+        }
 
-            if (files.isEmpty()) {
+        if (errorMessage != null) {
+            Text(
+                text = stringResource(R.string.large_storage_scan_failed),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        if (hasScanned && files.isEmpty() && folders.isEmpty() && errorMessage == null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                    .weight(1f, fill = true),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_large_files),
+                    text = stringResource(R.string.large_storage_scan_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
+            if (files.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.large_storage_files_section),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    TextButton(onClick = {
+                        if (selectedFiles.size == files.size) {
+                            selectedFiles.clear()
+                        } else {
+                            selectedFiles.clear()
+                            selectedFiles.addAll(files)
+                        }
+                    }) {
+                        Text(
+                            if (selectedFiles.size == files.size) {
+                                stringResource(R.string.action_clear_selection)
+                            } else {
+                                stringResource(R.string.action_select_all)
+                            }
+                        )
+                    }
+                }
+            }
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                if (folders.isNotEmpty()) {
+                    item(key = "large_folders_header") {
+                        Text(
+                            text = stringResource(R.string.large_storage_folders_section),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(
+                        items = folders,
+                        key = { "folder:${it.id}" },
+                        contentType = { "large_folder" }
+                    ) { folder ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = GoogleBluePrimary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = folder.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = folder.path,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                            Text(
+                                text = FileOperationsHelper.formatFileSize(folder.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                if (files.isNotEmpty()) {
+                    item(key = "large_files_header") {
+                        Text(
+                            text = stringResource(R.string.large_storage_files_section),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
+                    }
+                }
                     items(
                         items = files,
-                        key = { it.id },
+                    key = { "file:${it.id}" },
                         contentType = { "large_file" }
                     ) { item ->
                         val isChecked = selectedFiles.contains(item)
@@ -417,6 +540,12 @@ private fun ReviewLargeFilesScreen(
                                     text = item.name,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = item.path,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
                                 )
                                 Text(

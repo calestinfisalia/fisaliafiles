@@ -111,7 +111,7 @@ fun MediaPagerScreen(
                         )
                     }
                     item.isAudio -> {
-                        AudioPlayerSheet(
+                        AudioPlayerScreen(
                             fileItem = item,
                             localPlaybackFile = localFile,
                             playbackUri = uri,
