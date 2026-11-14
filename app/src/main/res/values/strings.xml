@@ -1,0 +1,207 @@
+<resources>
+    <string name="app_name">Fisalia Files</string>
+    <string name="app_subtitle">File Manager</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_clean">Clean</string>
+    <string name="tab_browse">Browse</string>
+    <string name="tab_network">Network Storage</string>
+
+    <!-- Navigation Drawer -->
+    <string name="drawer_clean">Clean</string>
+    <string name="drawer_clean_sub">%1$s used</string>
+    <string name="drawer_browse">Browse</string>
+    <string name="drawer_network">Network Storage</string>
+    <string name="drawer_network_sub">NAS &amp; SMB / FTP Server</string>
+    <string name="drawer_safe_folder">Safe Folder</string>
+    <string name="drawer_trash">Trash</string>
+    <string name="drawer_trash_empty">Trash is empty</string>
+    <string name="drawer_settings">Settings</string>
+    <string name="drawer_help">Help &amp; feedback</string>
+    <string name="help_dialog_title">Help &amp; feedback</string>
+    <string name="help_about_title">Fisalia Files v%1$s</string>
+    <string name="help_about_description">Fisalia Files is a modern file manager with a Material You-inspired design, a built-in media player (ExoPlayer), and support for SMB, FTP, SFTP, and WebDAV network storage.</string>
+    <string name="help_feedback_button">Send feedback via email</string>
+    <string name="help_feedback_subject">Fisalia Files feedback</string>
+    <string name="feedback_email">calestinfisalia@gmail.com</string>
+    <string name="drawer_privacy">Privacy Policy</string>
+    <string name="drawer_terms">Terms of Service</string>
+
+    <!-- Search -->
+    <string name="search_hint">Search in Files</string>
+    <string name="search_results">Search Results</string>
+    <string name="no_search_results">No files matched \"%1$s\"</string>
+
+    <!-- Recents -->
+    <string name="recents_title">Recents</string>
+    <string name="recents_see_all">See all</string>
+    <string name="recents_type_photo">Photo</string>
+    <string name="recents_type_video">Video</string>
+
+    <!-- Categories -->
+    <string name="categories_title">Categories</string>
+    <string name="category_downloads">Downloads</string>
+    <string name="category_images">Images</string>
+    <string name="category_videos">Videos</string>
+    <string name="category_audio">Audio</string>
+    <string name="category_documents">Documents &amp; other</string>
+    <string name="category_apps">Apps</string>
+
+    <!-- Storage Devices -->
+    <string name="storage_devices_title">All storage</string>
+    <string name="internal_storage">Internal storage</string>
+    <string name="sd_card">SD Card</string>
+    <string name="storage_free">%1$s free</string>
+    <string name="storage_used">%1$s used of %2$s</string>
+
+    <!-- Collections -->
+    <string name="collections_title">Collections</string>
+    <string name="favorites">Favorites</string>
+    <string name="safe_folder">Safe Folder</string>
+
+    <!-- Clean Screen -->
+    <string name="clean_header_title">Free up space</string>
+    <string name="clean_header_subtitle">Clean up files to keep your phone running smoothly</string>
+    <string name="clean_junk_title">Junk files</string>
+    <string name="clean_junk_desc">Delete temporary cache and app leftovers</string>
+    <string name="clean_duplicates_title">Duplicate files</string>
+    <string name="clean_duplicates_desc">Delete identical files to reclaim space</string>
+    <string name="clean_large_files_title">Large files</string>
+    <string name="clean_large_files_desc">Review and remove files taking up too much room</string>
+    <string name="btn_clean">Clean %1$s</string>
+    <string name="btn_clean_action">Clean</string>
+    <string name="btn_review_files">Review Files</string>
+    <string name="btn_scan_duplicates">Scan Duplicates</string>
+    <string name="clean_success">Junk files cleaned successfully!</string>
+    <string name="clean_already_clean">Already clean</string>
+    <string name="review_large_files_title">Large Files</string>
+    <string name="review_duplicates_title">Duplicate Files</string>
+    <string name="btn_delete_selected">Delete Selected (%1$d • %2$s)</string>
+    <string name="btn_delete_duplicates">Delete Duplicates (%1$d • %2$s)</string>
+    <string name="no_large_files">No large files found</string>
+    <string name="no_duplicates">No duplicate files found</string>
+    <string name="original_file">Original</string>
+    <string name="duplicate_copy">Copy</string>
+    <string name="files_deleted_success">%1$d files deleted successfully</string>
+
+    <!-- Network Screen -->
+    <string name="network_title">Network Storage</string>
+    <string name="network_subtitle">Access files via SMB, FTP, SFTP &amp; WebDAV</string>
+    <string name="btn_add_connection">Add New Server</string>
+    <string name="no_connections">No saved connections yet</string>
+    <string name="no_connections_desc">Connect to your PC, NAS, or Server to browse files over local WiFi or internet.</string>
+
+    <!-- Connection Dialog -->
+    <string name="connection_type">Protocol</string>
+    <string name="connection_name">Server Name (Optional)</string>
+    <string name="host_ip">Host / IP Address</string>
+    <string name="port">Port</string>
+    <string name="share_path">Share Name / Path (e.g. Shared or /home)</string>
+    <string name="domain_label">Domain / Workgroup (Optional)</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="anonymous">Sign in as Anonymous</string>
+    <string name="btn_test">Test</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_ok">OK</string>
+    <string name="connection_success">Connection Successful!</string>
+    <string name="connection_failed">Connection Failed: %1$s</string>
+
+    <!-- File Explorer & Actions -->
+    <string name="action_open">Open</string>
+    <string name="action_open_with">Open with other app</string>
+    <string name="action_share">Share</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_copy_to">Copy to...</string>
+    <string name="action_move">Move</string>
+    <string name="action_move_to">Move to...</string>
+    <string name="action_info">Details</string>
+    <string name="action_zip">Compress to ZIP</string>
+    <string name="action_unzip">Extract ZIP here</string>
+    <string name="action_new_folder">New Folder</string>
+    <string name="action_select_all">Select All</string>
+    <string name="action_paste">Paste</string>
+    <string name="action_paste_count">Paste (%1$d)</string>
+    <string name="empty_folder">This folder is empty</string>
+    <string name="items_selected">%1$d selected</string>
+    <string name="toast_copied_to_clipboard">Copied to clipboard</string>
+    <string name="toast_moved_to_clipboard">Cut to clipboard</string>
+    <string name="toast_files_copied_to_clipboard">%1$d files copied to clipboard</string>
+    <string name="toast_files_moved_to_clipboard">%1$d files cut to clipboard</string>
+    <string name="toast_moved_to_safe">Moved to Safe Folder</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_create_folder_title">Create New Folder</string>
+    <string name="dialog_rename_title">Rename</string>
+    <string name="dialog_delete_confirm">Are you sure you want to delete %1$d selected items?</string>
+    <string name="dialog_delete_single">Delete \"%1$s\"? This action cannot be undone.</string>
+    <string name="input_name_hint">Enter name</string>
+
+    <!-- Built-in Players & Media Preview -->
+    <string name="player_video_title">Video Player</string>
+    <string name="player_audio_title">Audio Player</string>
+    <string name="player_image_title">Image Viewer</string>
+    <string name="player_now_playing">Now Playing</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_forward_10">Forward 10s</string>
+    <string name="player_rewind_10">Rewind 10s</string>
+
+    <!-- Permissions -->
+    <string name="permission_title">All Files Access Required</string>
+    <string name="permission_desc">Fisalia Files needs storage management permission to browse, copy, move, and organize files on your device.</string>
+    <string name="btn_grant_permission">Grant Permission</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_desc">Choose application display theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_display_section">Display</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_desc">Use colors from system wallpaper</string>
+    <string name="settings_wallpaper_bg">Device wallpaper as background</string>
+    <string name="settings_wallpaper_bg_desc">Show your device wallpaper behind the app</string>
+    <string name="settings_file_section">File Management</string>
+    <string name="settings_show_hidden">Show hidden files</string>
+    <string name="settings_show_hidden_desc">Display files and folders starting with a dot</string>
+    <string name="settings_about_section">About</string>
+    <string name="settings_app_name">Fisalia Files</string>
+    <string name="settings_app_version">Version 1.0.0</string>
+    <string name="settings_developer_title">Developer</string>
+    <string name="settings_developer">fisalia app project by calestin fisalia</string>
+    <string name="settings_about_desc">Smart, fast, and lightweight file manager with LAN/FTP/SMB support</string>
+    <string name="dialog_theme_title">Choose theme</string>
+    <string name="loading_remote_file">Preparing file from network…</string>
+    <string name="storage_network_title">Network storage</string>
+    <string name="storage_network_tap_to_connect">Tap to browse files</string>
+    <string name="storage_network_usage_with_free">%1$s / %2$s • %3$s free</string>
+    <string name="action_back">Back</string>
+    <string name="action_clear_selection">Clear selection</string>
+    <string name="action_sort">Sort</string>
+    <string name="action_clear_text">Clear text</string>
+    <string name="view_mode_list">List view</string>
+    <string name="view_mode_grid">Grid view</string>
+    <string name="settings_view_mode">Grid view</string>
+    <string name="settings_view_mode_desc">Display files in a grid layout instead of a list</string>
+    <string name="sort_name_asc">Name (A-Z)</string>
+    <string name="sort_name_desc">Name (Z-A)</string>
+    <string name="sort_date_desc">Latest date</string>
+    <string name="sort_size_desc">Largest size</string>
+    <string name="more_options">More options</string>
+    <string name="safe_folder_set_pin">Set PIN for Safe Folder</string>
+    <string name="safe_folder_enter_pin">Enter Safe Folder PIN</string>
+    <string name="safe_folder_pin_hint">Set a 4-6 digit PIN to protect your safe files.</string>
+    <string name="safe_folder_enter_pin_desc">Enter your PIN to open the Safe Folder.</string>
+    <string name="safe_folder_pin_label">PIN</string>
+    <string name="safe_folder_confirm_pin_label">Confirm PIN</string>
+    <string name="safe_folder_pin_incorrect">Incorrect PIN</string>
+    <string name="action_move_to_safe">Move to Safe Folder</string>
+    <string name="action_favorite">Add to Favorites</string>
+    <string name="action_unfavorite">Remove from Favorites</string>
+</resources>

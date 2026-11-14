@@ -1,0 +1,188 @@
+<resources>
+    <string name="app_name">Fisalia Files</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_clean">Pembersih</string>
+    <string name="tab_browse">Jelajahi</string>
+    <string name="tab_network">Penyimpanan Jaringan</string>
+
+    <!-- Navigation Drawer -->
+    <string name="drawer_browse">Jelajahi</string>
+    <string name="drawer_clean">Pembersih</string>
+    <string name="drawer_clean_sub">%1$s terpakai</string>
+    <string name="drawer_network">Penyimpanan Jaringan</string>
+    <string name="drawer_network_sub">NAS &amp; Server SMB / FTP</string>
+    <string name="drawer_safe_folder">Folder Aman</string>
+    <string name="drawer_trash">Sampah</string>
+    <string name="drawer_trash_empty">Sampah kosong</string>
+    <string name="drawer_settings">Pengaturan</string>
+    <string name="drawer_help">Bantuan &amp; umpan balik</string>
+    <string name="drawer_privacy">Kebijakan Privasi</string>
+    <string name="drawer_terms">Ketentuan Layanan</string>
+
+    <!-- Search -->
+    <string name="search_hint">Telusuri di Files</string>
+    <string name="search_results">Hasil Pencarian</string>
+    <string name="no_search_results">Tidak ada file yang cocok dengan \"%1$s\"</string>
+
+    <!-- Categories -->
+    <string name="categories_title">Kategori</string>
+    <string name="category_downloads">Unduhan</string>
+    <string name="category_images">Gambar</string>
+    <string name="category_videos">Video</string>
+    <string name="category_audio">Audio</string>
+    <string name="category_documents">Dokumen &amp; lainnya</string>
+    <string name="category_apps">Aplikasi</string>
+
+    <!-- Storage Devices -->
+    <string name="storage_devices_title">Semua penyimpanan</string>
+    <string name="internal_storage">Penyimpanan internal</string>
+    <string name="sd_card">Kartu SD</string>
+    <string name="storage_free">%1$s bebas dari %2$s</string>
+    <string name="storage_used">%1$s digunakan dari %2$s</string>
+
+    <!-- Collections -->
+    <string name="collections_title">Koleksi</string>
+    <string name="favorites">Favorit</string>
+    <string name="safe_folder">Folder Aman</string>
+
+    <!-- Clean Screen -->
+    <string name="clean_header_title">Kosongkan ruang penyimpanan</string>
+    <string name="clean_header_subtitle">Bersihkan ruang untuk menjaga perangkat Anda tetap lancar</string>
+    <string name="clean_junk_title">File sampah</string>
+    <string name="clean_junk_desc">Kosongkan file sampah dan cache aplikasi</string>
+    <string name="clean_duplicates_title">File duplikat</string>
+    <string name="clean_duplicates_desc">Hapus file yang sama untuk menghemat ruang</string>
+    <string name="clean_large_files_title">File berukuran besar</string>
+    <string name="clean_large_files_desc">Tinjau dan hapus file yang memakan ruang</string>
+    <string name="btn_clean">Bersihkan %1$s</string>
+    <string name="btn_clean_action">Bersihkan</string>
+    <string name="btn_review_files">Tinjau File</string>
+    <string name="btn_scan_duplicates">Pindai Duplikat</string>
+    <string name="clean_success">File sampah berhasil dibersihkan!</string>
+    <string name="clean_already_clean">Sudah Bersih</string>
+    <string name="review_large_files_title">File Berukuran Besar</string>
+    <string name="review_duplicates_title">File Duplikat</string>
+    <string name="btn_delete_selected">Hapus yang Dipilih (%1$d • %2$s)</string>
+    <string name="btn_delete_duplicates">Hapus Duplikat (%1$d • %2$s)</string>
+    <string name="no_large_files">Tidak ada file berukuran besar</string>
+    <string name="no_duplicates">Tidak ada file duplikat ditemukan</string>
+    <string name="original_file">Asli</string>
+    <string name="duplicate_copy">Salinan</string>
+    <string name="files_deleted_success">%1$d file berhasil dihapus</string>
+
+    <!-- Network Screen -->
+    <string name="network_title">Penyimpanan Jaringan</string>
+    <string name="network_subtitle">Akses file di SMB, FTP, SFTP &amp; WebDAV</string>
+    <string name="btn_add_connection">Tambah Server Baru</string>
+    <string name="no_connections">Belum ada koneksi tersimpan</string>
+    <string name="no_connections_desc">Hubungkan ke PC, NAS, atau Server untuk mengelola file melalui jaringan lokal atau internet.</string>
+
+    <!-- Connection Dialog -->
+    <string name="connection_type">Protokol</string>
+    <string name="connection_name">Nama Koneksi (Opsional)</string>
+    <string name="host_ip">Alamat Host / IP</string>
+    <string name="port">Port</string>
+    <string name="share_path">Nama Share / Path (cth: Shared atau /home)</string>
+    <string name="domain_label">Domain / Workgroup (Opsional)</string>
+    <string name="username">Nama Pengguna</string>
+    <string name="password">Kata Sandi</string>
+    <string name="anonymous">Masuk sebagai Anonim</string>
+    <string name="btn_test">Uji</string>
+    <string name="btn_save">Simpan</string>
+    <string name="btn_cancel">Batal</string>
+    <string name="btn_ok">OK</string>
+    <string name="connection_success">Koneksi Berhasil!</string>
+    <string name="connection_failed">Gagal Terhubung: %1$s</string>
+
+    <!-- File Explorer & Actions -->
+    <string name="action_open">Buka</string>
+    <string name="action_open_with">Buka dengan aplikasi lain</string>
+    <string name="action_share">Bagikan</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_rename">Ganti Nama</string>
+    <string name="action_copy">Salin</string>
+    <string name="action_copy_to">Salin ke...</string>
+    <string name="action_move">Pindahkan</string>
+    <string name="action_move_to">Pindahkan ke...</string>
+    <string name="action_info">Detail</string>
+    <string name="action_zip">Kompres ke ZIP</string>
+    <string name="action_unzip">Ekstrak ZIP di sini</string>
+    <string name="action_new_folder">Folder Baru</string>
+    <string name="action_select_all">Pilih Semua</string>
+    <string name="action_paste">Tempel di Sini</string>
+    <string name="empty_folder">Folder ini kosong</string>
+    <string name="items_selected">%1$d dipilih</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_create_folder_title">Buat Folder Baru</string>
+    <string name="dialog_rename_title">Ganti Nama File/Folder</string>
+    <string name="dialog_delete_confirm">Apakah Anda yakin ingin menghapus %1$d item yang dipilih?</string>
+    <string name="dialog_delete_single">Hapus \"%1$s\"? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="input_name_hint">Masukkan nama</string>
+
+    <!-- Built-in Players & Media Preview -->
+    <string name="player_video_title">Pemutar Video</string>
+    <string name="player_audio_title">Pemutar Audio</string>
+    <string name="player_image_title">Pratinjau Gambar</string>
+    <string name="player_now_playing">Sedang Memutar</string>
+    <string name="player_play">Putar</string>
+    <string name="player_pause">Jeda</string>
+    <string name="player_forward_10">Maju 10 dtk</string>
+    <string name="player_rewind_10">Mundur 10 dtk</string>
+
+    <!-- Permissions -->
+    <string name="permission_title">Izin Akses File Diperlukan</string>
+    <string name="permission_desc">Fisalia Files membutuhkan izin kelola penyimpanan untuk menjelajah, menyalin, memindahkan, dan mengelola file di perangkat Anda.</string>
+    <string name="btn_grant_permission">Beri Izin</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Pengaturan</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_desc">Pilih tampilan tema aplikasi</string>
+    <string name="theme_system">Default sistem</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="settings_display_section">Tampilan</string>
+    <string name="settings_dynamic_color">Warna dinamis</string>
+    <string name="settings_dynamic_color_desc">Gunakan warna dari wallpaper sistem</string>
+    <string name="settings_wallpaper_bg">Wallpaper perangkat sebagai latar belakang</string>
+    <string name="settings_wallpaper_bg_desc">Tampilkan wallpaper perangkat Anda di belakang aplikasi</string>
+    <string name="settings_file_section">Pengelolaan File</string>
+    <string name="settings_show_hidden">Tampilkan file tersembunyi</string>
+    <string name="settings_show_hidden_desc">Tampilkan file dan folder yang diawali titik</string>
+    <string name="settings_about_section">Tentang</string>
+    <string name="settings_app_name">Fisalia Files</string>
+    <string name="settings_app_version">Versi 1.0.0</string>
+    <string name="settings_developer_title">Pengembang</string>
+    <string name="settings_developer">fisalia app project by calestin fisalia</string>
+    <string name="settings_about_desc">Pengelola file cerdas, cepat, dan ringan dengan dukungan LAN/FTP/SMB</string>
+    <string name="dialog_theme_title">Pilih tema</string>
+    <string name="loading_remote_file">Menyiapkan file dari jaringan…</string>
+    <string name="storage_network_title">Penyimpanan jaringan</string>
+    <string name="storage_network_tap_to_connect">Ketuk untuk menjelajah file</string>
+    <string name="storage_network_usage_with_free">%1$s / %2$s • Sisa %3$s</string>
+    <string name="action_back">Kembali</string>
+    <string name="action_clear_selection">Batal pilih</string>
+    <string name="action_sort">Urutkan</string>
+    <string name="action_clear_text">Hapus teks</string>
+    <string name="view_mode_list">Tampilan daftar</string>
+    <string name="view_mode_grid">Tampilan kisi</string>
+    <string name="settings_view_mode">Tampilan kisi</string>
+    <string name="settings_view_mode_desc">Tampilkan file dalam tata letak kisi, bukan daftar</string>
+    <string name="sort_name_asc">Nama (A-Z)</string>
+    <string name="sort_name_desc">Nama (Z-A)</string>
+    <string name="sort_date_desc">Tanggal terbaru</string>
+    <string name="sort_size_desc">Ukuran terbesar</string>
+    <string name="more_options">Opsi lainnya</string>
+    <string name="safe_folder_set_pin">Atur PIN Folder Aman</string>
+    <string name="safe_folder_enter_pin">Masukkan PIN Folder Aman</string>
+    <string name="safe_folder_pin_hint">Atur PIN 4-6 digit untuk melindungi file aman Anda.</string>
+    <string name="safe_folder_enter_pin_desc">Masukkan PIN Anda untuk membuka Folder Aman.</string>
+    <string name="safe_folder_pin_label">PIN</string>
+    <string name="safe_folder_confirm_pin_label">Konfirmasi PIN</string>
+    <string name="safe_folder_pin_incorrect">PIN salah</string>
+    <string name="action_move_to_safe">Pindahkan ke Folder Aman</string>
+    <string name="action_favorite">Tambah ke Favorit</string>
+    <string name="action_unfavorite">Hapus dari Favorit</string>
+</resources>
