@@ -1,5 +1,6 @@
 package com.fisalia.files.ui.screens.clean
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -21,9 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.FileCopy
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,7 +74,6 @@ import com.fisalia.files.ui.theme.GoogleRedContainer
 @Composable
 fun CleanScreen(
     viewModel: CleanViewModel,
-    onOpenSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -88,15 +89,6 @@ fun CleanScreen(
                         text = stringResource(R.string.clean_header_title),
                         fontWeight = FontWeight.SemiBold
                     )
-                },
-                actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
@@ -178,7 +170,7 @@ fun CleanScreen(
     }
 
     if (showReviewLargeFiles) {
-        ReviewLargeFilesBottomSheet(
+        ReviewLargeFilesScreen(
             files = state.largeFiles,
             onDismiss = { showReviewLargeFiles = false },
             onDeleteSelected = { selected ->
@@ -275,6 +267,7 @@ private fun CleanCard(
                 Button(
                     onClick = onAction,
                     enabled = buttonEnabled,
+                    modifier = Modifier.widthIn(min = 148.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GoogleBluePrimary)
                 ) {
@@ -285,24 +278,74 @@ private fun CleanCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReviewLargeFilesBottomSheet(
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ReviewLargeFilesScreen(
     files: List<FileItem>,
     onDismiss: () -> Unit,
     onDeleteSelected: (List<FileItem>) -> Unit
 ) {
-    val selectedFiles = remember { mutableStateListOf<FileItem>().apply { addAll(files) } }
+    val selectedFiles = remember(files) { mutableStateListOf<FileItem>().apply { addAll(files) } }
     val totalSize = selectedFiles.sumOf { it.size }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    ) {
+    BackHandler(onBack = onDismiss)
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.review_large_files_title),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.action_back)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        bottomBar = {
+            if (files.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        onDeleteSelected(selectedFiles.toList())
+                        onDismiss()
+                    },
+                    enabled = selectedFiles.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GoogleRed),
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.btn_delete_selected,
+                            selectedFiles.size,
+                            FileOperationsHelper.formatFileSize(totalSize)
+                        ),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -332,7 +375,7 @@ private fun ReviewLargeFilesBottomSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(32.dp),
+                        .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -345,8 +388,7 @@ private fun ReviewLargeFilesBottomSheet(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .heightIn(max = 400.dp)
+                        .weight(1f)
                 ) {
                     items(
                         items = files,
@@ -386,31 +428,6 @@ private fun ReviewLargeFilesBottomSheet(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        onDeleteSelected(selectedFiles.toList())
-                        onDismiss()
-                    },
-                    enabled = selectedFiles.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = GoogleRed),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.btn_delete_selected,
-                            selectedFiles.size,
-                            FileOperationsHelper.formatFileSize(totalSize)
-                        ),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

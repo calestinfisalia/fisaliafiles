@@ -135,6 +135,10 @@ class MediaStreamingServer private constructor() {
         return "http://127.0.0.1:$port/stream?connId=$encConn&path=$encPath"
     }
 
+    fun getThumbnailUrl(connectionId: String, path: String, size: Long, lastModified: Long): String {
+        return "${getStreamUrl(connectionId, path)}&thumbnailVersion=$size-$lastModified"
+    }
+
     companion object {
         @Volatile
         private var instance: MediaStreamingServer? = null

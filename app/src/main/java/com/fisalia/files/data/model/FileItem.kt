@@ -23,13 +23,15 @@ data class FileItem(
     val extension: String = "",
     val protocol: ProtocolType = ProtocolType.LOCAL,
     val connectionId: String? = null,
-    val childCount: Int = 0,
+    val childCount: Int = -1,
     val isHidden: Boolean = false
 ) {
     val isImage: Boolean get() = mimeType?.startsWith("image/") == true || extension.lowercase() in listOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic")
     val isVideo: Boolean get() = mimeType?.startsWith("video/") == true || extension.lowercase() in listOf("mp4", "mkv", "mov", "avi", "webm", "flv", "3gp")
     val isAudio: Boolean get() = mimeType?.startsWith("audio/") == true || extension.lowercase() in listOf("mp3", "m4a", "wav", "flac", "aac", "ogg")
     val isApk: Boolean get() = extension.equals("apk", ignoreCase = true) || mimeType == "application/vnd.android.package-archive"
-    val isZip: Boolean get() = extension.lowercase() in listOf("zip", "rar", "7z", "tar", "gz")
+    val isArchive: Boolean get() = extension.lowercase() in listOf(
+        "zip", "rar", "7z", "tar", "gz", "bz2", "xz", "tgz", "tbz2", "txz"
+    )
     val isDocument: Boolean get() = extension.lowercase() in listOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "epub")
 }

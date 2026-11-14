@@ -17,6 +17,16 @@ Play media without installing a third-party app:
 - **Image viewer** with pinch-to-zoom (up to 5x), panning, sharing, and an option to open images in another app.
 - Swipe between media items while viewing or playing them.
 
+### 📂 Browse and storage navigation
+
+- Browse internal storage, SD cards, and configured network shares.
+- Keep your current SMB folder when switching between app tabs.
+- Use Back to move up through SMB folders; Back at the share root returns to the app home.
+- View available free space for supported storage devices and SMB shares.
+- Browse Trash and review large files on their own pages.
+- See folder item counts in list and grid views, including SMB shares.
+- Load SMB image previews at display size and reuse cached thumbnails.
+
 ### 🌐 System-language localization
 
 The app follows the Android system language without requiring a manual language setting:
@@ -46,7 +56,8 @@ Save server profiles, test connections, and browse remote files. Supported opera
 ### 🛠️ File management
 
 - Open, share, rename, delete, copy, and move files.
-- Create and extract ZIP archives.
+- Copy and Move place selected files on the clipboard. Browse to the destination folder and tap **Paste** to complete the operation. Transfers work between local storage and supported network shares.
+- Create ZIP archives and extract ZIP, RAR, 7z, TAR, GZ, BZ2, and XZ archives, including compressed TAR files. Archives are extracted into a new folder next to the original.
 - Sort by name, modification date, or file size.
 - Use Android storage permissions for browsing local files.
 - Open files in other apps through Android's `FileProvider` integration.
@@ -62,6 +73,7 @@ Save server profiles, test connections, and browse remote files. Supported opera
 - **SMB:** `com.hierynomus:smbj`
 - **FTP/FTPS:** Apache Commons Net
 - **SFTP:** JSch
+- **Archive extraction:** Apache Commons Compress and Junrar
 - **Images:** Coil
 - **Navigation:** Navigation Compose
 - **Serialization:** Gson
@@ -128,3 +140,7 @@ Install it on a connected device or emulator with:
 ```powershell
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+## Releases
+
+Download the latest Android debug APK from [GitHub Releases](https://github.com/calestinfisalia/fisaliafiles/releases/latest). Release APKs are for testing and are not production-signed.

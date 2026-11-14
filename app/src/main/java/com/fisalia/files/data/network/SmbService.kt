@@ -1,5 +1,6 @@
 package com.fisalia.files.data.network
 
+import android.util.Log
 import com.fisalia.files.data.local.FileOperationsHelper
 import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.NetworkConnection
@@ -137,6 +138,38 @@ class SmbService {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun countDirectoryChildren(
+        connection: NetworkConnection,
+        directoryPaths: List<String>
+    ): Result<Map<String, Int>> = withContext(Dispatchers.IO) {
+        try {
+            val (conn, session) = connect(connection)
+            try {
+                val share = session.connectShare(connection.shareOrBasePath) as DiskShare
+                try {
+                    val counts = mutableMapOf<String, Int>()
+                    for (path in directoryPaths) {
+                        val cleanPath = path.trim('/').replace('/', '\\')
+                        try {
+                            counts[path] = share.list(cleanPath)
+                                .count { it.fileName != "." && it.fileName != ".." }
+                        } catch (error: Exception) {
+                            Log.w("SmbService", "Could not read item count for $path", error)
+                        }
+                    }
+                    Result.success(counts)
+                } finally {
+                    share.close()
+                }
+            } finally {
+                session.close()
+                conn.close()
+            }
+        } catch (error: Exception) {
+            Result.failure(error)
         }
     }
 
@@ -353,7 +386,7 @@ class SmbService {
 
                     if (isHead) return
 
-                    val buffer = ByteArray(64 * 1024)
+                    val buffer = ByteArray(1024 * 1024)
                     var currentOffset = actualStart
                     while (currentOffset <= actualEnd) {
                         val toRead = minOf(buffer.size.toLong(), actualEnd - currentOffset + 1L).toInt()

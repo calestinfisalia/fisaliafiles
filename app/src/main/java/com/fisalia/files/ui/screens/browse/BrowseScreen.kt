@@ -90,7 +90,8 @@ fun BrowseScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var singleItemToDelete by remember { mutableStateOf<FileItem?>(null) }
 
-    val isInsideDirectory = state.currentPath.isNotBlank() || state.activeCategory != null || state.activeConnection != null || state.isFavorites || state.isSafeFolder
+    val isInsideDirectory = state.activeConnection == null &&
+        (state.currentPath.isNotBlank() || state.activeCategory != null || state.isFavorites || state.isSafeFolder)
 
     androidx.compose.runtime.LaunchedEffect(isInsideDirectory) {
         if (!isInsideDirectory) {
@@ -203,6 +204,15 @@ fun BrowseScreen(
                                     onActionDetails = { itemForDetails = item },
                                     onActionZip = {
                                         viewModel.zipSelectedItems("Arsip_${File(item.name).nameWithoutExtension}")
+                                    },
+                                    onActionExtract = {
+                                        viewModel.extractArchive(item) { destination ->
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                context.getString(R.string.archive_extracted_to, destination.name),
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     },
                                     onActionCopy = {
                                         viewModel.setClipboard(listOf(item), isCut = false)

@@ -1,6 +1,7 @@
 package com.fisalia.files.ui.screens.browse
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fisalia.files.data.local.ConnectionPreferences
@@ -357,6 +358,33 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                         isLoading = false
                     )
                 }
+                val directoryPaths = items.filter { it.isDirectory }.map { it.path }
+                if (connection.type == ProtocolType.SMB && directoryPaths.isNotEmpty()) {
+                    launch {
+                        networkManager.countDirectoryChildren(connection, directoryPaths)
+                            .onSuccess { counts ->
+                                _uiState.update { current ->
+                                    if (
+                                        current.activeConnection?.id != connection.id ||
+                                        current.currentPath != relativePath
+                                    ) {
+                                        current
+                                    } else {
+                                        current.copy(
+                                            files = current.files.map { item ->
+                                                counts[item.path]?.let { count ->
+                                                    item.copy(childCount = count)
+                                                } ?: item
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            .onFailure { error ->
+                                Log.w("BrowseViewModel", "Could not load SMB folder item counts", error)
+                            }
+                    }
+                }
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(
@@ -529,104 +557,119 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
         val clip = state.clipboard ?: return
         if (clip.files.isEmpty()) return
 
+        val destinationConnection = state.activeConnection
+        val destinationPath = if (destinationConnection == null && state.currentPath.isBlank()) {
+            localRepo.getStorageDevices().firstOrNull()?.path
+                ?: android.os.Environment.getExternalStorageDirectory().absolutePath
+        } else {
+            state.currentPath
+        }
+
+        executeTransfer(clip, destinationConnection, destinationPath) {
+            if (clip.isCut) clearClipboard()
+            if (destinationConnection != null) {
+                loadNetworkDirectory(destinationConnection, destinationPath)
+            } else {
+                refreshCurrentView()
+                loadStorageDevices()
+            }
+        }
+    }
+
+    private fun executeTransfer(
+        clip: ClipboardItem,
+        destinationConnection: NetworkConnection?,
+        destinationPath: String,
+        onSuccess: () -> Unit
+    ) {
+        if (clip.files.isEmpty()) return
+
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            val destConnection = state.activeConnection
-            val srcConnection = clip.sourceConnection
-            
-            // Resolve local target path if currently empty
-            val resolvedTargetPath = if (destConnection == null && state.currentPath.isBlank()) {
-                localRepo.getStorageDevices().firstOrNull()?.path ?: android.os.Environment.getExternalStorageDirectory().absolutePath
-            } else {
-                state.currentPath
-            }
-
+            val sourceConnection = clip.sourceConnection
             try {
                 when {
-                    // Scenario 1: Local -> Local
-                    srcConnection == null && destConnection == null -> {
-                        val targetDir = File(resolvedTargetPath)
-                        if (!targetDir.exists()) targetDir.mkdirs()
+                    sourceConnection == null && destinationConnection == null -> {
+                        val targetDirectory = File(destinationPath)
+                        if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
+                            error("Unable to create the destination folder")
+                        }
                         for (item in clip.files) {
-                            val src = File(item.path)
+                            val source = File(item.path)
+                            if (item.isDirectory) {
+                                val sourcePath = source.canonicalPath
+                                val targetPath = targetDirectory.canonicalPath
+                                require(targetPath != sourcePath && !targetPath.startsWith("$sourcePath${File.separator}")) {
+                                    "A folder cannot be transferred into itself"
+                                }
+                            }
                             if (clip.isCut) {
-                                FileOperationsHelper.move(src, targetDir).getOrThrow()
+                                FileOperationsHelper.move(source, targetDirectory).getOrThrow()
                             } else {
-                                FileOperationsHelper.copy(src, targetDir).getOrThrow()
+                                FileOperationsHelper.copy(source, targetDirectory).getOrThrow()
                             }
                         }
-                        if (clip.isCut) clearClipboard()
-                        refreshCurrentView()
-                        loadStorageDevices()
                     }
 
-                    // Scenario 2: Local -> Remote (NAS)
-                    srcConnection == null && destConnection != null -> {
-                        val cleanTarget = resolvedTargetPath.trim('/')
+                    sourceConnection == null && destinationConnection != null -> {
+                        val cleanTarget = destinationPath.trim('/')
                         for (item in clip.files) {
-                            val srcFile = File(item.path)
-                            val remoteDest = if (cleanTarget.isBlank()) item.name else "$cleanTarget/${item.name}"
+                            val source = File(item.path)
+                            val remoteDestination = if (cleanTarget.isBlank()) item.name else "$cleanTarget/${item.name}"
                             if (item.isDirectory) {
-                                uploadDirectoryRecursively(destConnection, srcFile, remoteDest)
+                                uploadDirectoryRecursively(destinationConnection, source, remoteDestination)
                             } else {
-                                networkManager.uploadFile(destConnection, srcFile, remoteDest).getOrThrow()
+                                networkManager.uploadFile(destinationConnection, source, remoteDestination).getOrThrow()
                             }
-                            if (clip.isCut) {
-                                FileOperationsHelper.delete(srcFile).getOrThrow()
-                            }
+                            if (clip.isCut) FileOperationsHelper.delete(source).getOrThrow()
                         }
-                        if (clip.isCut) clearClipboard()
-                        loadNetworkDirectory(destConnection, resolvedTargetPath)
                     }
 
-                    // Scenario 3: Remote (NAS) -> Local
-                    srcConnection != null && destConnection == null -> {
-                        val targetDir = File(resolvedTargetPath)
-                        if (!targetDir.exists()) targetDir.mkdirs()
+                    sourceConnection != null && destinationConnection == null -> {
+                        val targetDirectory = File(destinationPath)
+                        if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
+                            error("Unable to create the destination folder")
+                        }
                         for (item in clip.files) {
-                            val localTarget = File(targetDir, item.name)
+                            val localTarget = File(targetDirectory, item.name)
                             if (item.isDirectory) {
-                                downloadDirectoryRecursively(srcConnection, item.path, localTarget)
+                                downloadDirectoryRecursively(sourceConnection, item.path, localTarget)
                             } else {
-                                networkManager.downloadFile(srcConnection, item.path, localTarget).getOrThrow()
+                                networkManager.downloadFile(sourceConnection, item.path, localTarget).getOrThrow()
                             }
                             if (clip.isCut) {
-                                networkManager.delete(srcConnection, item.path, item.isDirectory).getOrThrow()
+                                networkManager.delete(sourceConnection, item.path, item.isDirectory).getOrThrow()
                             }
                         }
-                        if (clip.isCut) clearClipboard()
-                        refreshCurrentView()
-                        loadStorageDevices()
                     }
 
-                    // Scenario 4: Remote -> Remote
-                    srcConnection != null && destConnection != null -> {
-                        val cacheDir = File(getApplication<Application>().cacheDir, "remote_transfer")
-                        if (!cacheDir.exists()) cacheDir.mkdirs()
-                        val cleanTarget = resolvedTargetPath.trim('/')
-
+                    sourceConnection != null && destinationConnection != null -> {
+                        val cacheDirectory = File(getApplication<Application>().cacheDir, "remote_transfer")
+                        if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
+                            error("Unable to create the temporary transfer folder")
+                        }
+                        val cleanTarget = destinationPath.trim('/')
                         for (item in clip.files) {
-                            val tempLocal = File(cacheDir, item.name)
-                            val remoteDest = if (cleanTarget.isBlank()) item.name else "$cleanTarget/${item.name}"
+                            val temporaryFile = File(cacheDirectory, item.name)
+                            val remoteDestination = if (cleanTarget.isBlank()) item.name else "$cleanTarget/${item.name}"
                             if (item.isDirectory) {
-                                downloadDirectoryRecursively(srcConnection, item.path, tempLocal)
-                                uploadDirectoryRecursively(destConnection, tempLocal, remoteDest)
-                                tempLocal.deleteRecursively()
+                                downloadDirectoryRecursively(sourceConnection, item.path, temporaryFile)
+                                uploadDirectoryRecursively(destinationConnection, temporaryFile, remoteDestination)
+                                temporaryFile.deleteRecursively()
                             } else {
-                                networkManager.downloadFile(srcConnection, item.path, tempLocal).getOrThrow()
-                                networkManager.uploadFile(destConnection, tempLocal, remoteDest).getOrThrow()
-                                tempLocal.delete()
+                                networkManager.downloadFile(sourceConnection, item.path, temporaryFile).getOrThrow()
+                                networkManager.uploadFile(destinationConnection, temporaryFile, remoteDestination).getOrThrow()
+                                temporaryFile.delete()
                             }
                             if (clip.isCut) {
-                                networkManager.delete(srcConnection, item.path, item.isDirectory).getOrThrow()
+                                networkManager.delete(sourceConnection, item.path, item.isDirectory).getOrThrow()
                             }
                         }
-                        if (clip.isCut) clearClipboard()
-                        loadNetworkDirectory(destConnection, resolvedTargetPath)
                     }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "Gagal menempel file: ${e.localizedMessage}") }
+                onSuccess()
+            } catch (error: Exception) {
+                _uiState.update { it.copy(errorMessage = error.localizedMessage ?: error.message) }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -669,6 +712,28 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 clearSelection()
                 loadDirectory(state.currentPath)
             }
+        }
+    }
+
+    fun extractArchive(fileItem: FileItem, onSuccess: (File) -> Unit = {}) {
+        val archive = File(fileItem.path)
+        val parent = archive.parentFile
+        if (fileItem.protocol != ProtocolType.LOCAL || parent == null) {
+            _uiState.update { it.copy(errorMessage = "This archive cannot be extracted here") }
+            return
+        }
+
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        viewModelScope.launch {
+            val result = FileOperationsHelper.extractArchive(archive, parent)
+            result.onSuccess { destination ->
+                refreshCurrentView()
+                loadRecentFiles()
+                onSuccess(destination)
+            }.onFailure { error ->
+                _uiState.update { it.copy(errorMessage = error.localizedMessage ?: error.message) }
+            }
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

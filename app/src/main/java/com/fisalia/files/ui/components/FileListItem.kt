@@ -83,6 +83,7 @@ fun FileListItem(
     onActionDelete: () -> Unit,
     onActionDetails: () -> Unit,
     onActionZip: () -> Unit,
+    onActionExtract: () -> Unit = {},
     onActionCopy: () -> Unit,
     onActionMove: () -> Unit,
     isFavorite: Boolean = false,
@@ -99,7 +100,7 @@ fun FileListItem(
                 onClick = onItemClick,
                 onLongClick = onItemLongClick
             ),
-        color = if (isSelected) GoogleBlueContainer.copy(alpha = 0.5f) else Color.Transparent
+        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent
     ) {
         Row(
             modifier = Modifier
@@ -131,16 +132,15 @@ fun FileListItem(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val subText = remember(fileItem) {
-                        if (fileItem.isDirectory) {
-                            if (fileItem.protocol == ProtocolType.LOCAL && fileItem.childCount >= 0) {
-                                "${fileItem.childCount} item • ${FileOperationsHelper.formatDate(fileItem.lastModified)}"
-                            } else {
-                                "Folder • ${FileOperationsHelper.formatDate(fileItem.lastModified)}"
-                            }
+                    val subText = if (fileItem.isDirectory) {
+                        val folderDescription = if (fileItem.childCount >= 0) {
+                            stringResource(R.string.folder_item_count, fileItem.childCount)
                         } else {
-                            "${FileOperationsHelper.formatFileSize(fileItem.size)} • ${FileOperationsHelper.formatDate(fileItem.lastModified)}"
+                            stringResource(R.string.folder_label)
                         }
+                        "$folderDescription • ${FileOperationsHelper.formatDate(fileItem.lastModified)}"
+                    } else {
+                        "${FileOperationsHelper.formatFileSize(fileItem.size)} • ${FileOperationsHelper.formatDate(fileItem.lastModified)}"
                     }
 
                     Text(
@@ -152,7 +152,7 @@ fun FileListItem(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (fileItem.protocol != ProtocolType.LOCAL) {
+                    if (fileItem.protocol != ProtocolType.LOCAL && fileItem.protocol != ProtocolType.SMB) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
@@ -230,6 +230,15 @@ fun FileListItem(
                                     onActionZip()
                                 }
                             )
+                            if (fileItem.isArchive) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_extract_archive)) },
+                                    onClick = {
+                                        showMenu = false
+                                        onActionExtract()
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(stringResource(if (isFavorite) R.string.action_unfavorite else R.string.action_favorite)) },
                                 onClick = {
@@ -290,9 +299,11 @@ fun FileLeadingThumbnail(fileItem: FileItem, modifier: Modifier = Modifier) {
             } else {
                 when {
                     fileItem.isImage && !fileItem.connectionId.isNullOrBlank() -> {
-                        com.fisalia.files.data.network.MediaStreamingServer.getInstance().getStreamUrl(
+                        com.fisalia.files.data.network.MediaStreamingServer.getInstance().getThumbnailUrl(
                             connectionId = fileItem.connectionId,
-                            path = fileItem.path
+                            path = fileItem.path,
+                            size = fileItem.size,
+                            lastModified = fileItem.lastModified
                         )
                     }
                     else -> null
@@ -302,11 +313,21 @@ fun FileLeadingThumbnail(fileItem: FileItem, modifier: Modifier = Modifier) {
     }
 
     if (thumbnailModel != null) {
-        val imageRequest = remember(context, thumbnailModel) {
-            ImageRequest.Builder(context)
+        val smbThumbnailKey = if (fileItem.protocol == ProtocolType.SMB) {
+            "smb-thumbnail:${fileItem.connectionId}:${fileItem.path}:${fileItem.size}:${fileItem.lastModified}"
+        } else {
+            null
+        }
+        val imageRequest = remember(context, thumbnailModel, smbThumbnailKey) {
+            val builder = ImageRequest.Builder(context)
                 .data(thumbnailModel)
-                .crossfade(true)
-                .build()
+                .size(128, 128)
+                .crossfade(false)
+            if (smbThumbnailKey != null) {
+                builder.memoryCacheKey(smbThumbnailKey)
+                    .diskCacheKey(smbThumbnailKey)
+            }
+            builder.build()
         }
         AsyncImage(
             model = imageRequest,
@@ -327,7 +348,7 @@ fun FileLeadingThumbnail(fileItem: FileItem, modifier: Modifier = Modifier) {
                 fileItem.isAudio -> Triple(Icons.Default.AudioFile, GoogleOrange, GoogleOrangeContainer)
                 fileItem.isDocument -> Triple(Icons.Default.Description, GooglePurple, GooglePurpleContainer)
                 fileItem.isApk -> Triple(Icons.Default.Android, GoogleGreen, GoogleGreenContainer)
-                fileItem.isZip -> Triple(Icons.Default.FolderZip, GoogleOrange, GoogleOrangeContainer)
+                fileItem.isArchive -> Triple(Icons.Default.FolderZip, GoogleOrange, GoogleOrangeContainer)
                 else -> Triple(Icons.Default.InsertDriveFile, onSurfaceVariant, surfaceVariant)
             }
         }

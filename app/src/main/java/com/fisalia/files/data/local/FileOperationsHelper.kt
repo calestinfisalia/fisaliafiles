@@ -7,11 +7,20 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.fisalia.files.R
 import com.fisalia.files.data.model.FileItem
+import com.github.junrar.Archive
+import org.apache.commons.compress.archivers.sevenz.SevenZFile
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -218,26 +227,176 @@ object FileOperationsHelper {
         }
     }
 
-    suspend fun unzip(zipFile: File, destinationDir: File): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun extractArchive(archiveFile: File, destinationDir: File): Result<File> = withContext(Dispatchers.IO) {
+        var extractionDir: File? = null
         try {
-            if (!destinationDir.exists()) destinationDir.mkdirs()
-            ZipInputStream(FileInputStream(zipFile)).use { zis ->
-                var entry = zis.nextEntry
-                while (entry != null) {
-                    val file = File(destinationDir, entry.name)
-                    if (entry.isDirectory) {
-                        file.mkdirs()
-                    } else {
-                        file.parentFile?.mkdirs()
-                        file.outputStream().use { zis.copyTo(it) }
-                    }
-                    zis.closeEntry()
-                    entry = zis.nextEntry
-                }
+            require(archiveFile.isFile) { "Archive file does not exist" }
+            require(archiveFile.extension.lowercase() in supportedArchiveExtensions) {
+                "Unsupported archive format: ${archiveFile.extension}"
             }
-            Result.success(Unit)
+            if (!destinationDir.exists() && !destinationDir.mkdirs()) {
+                throw IOException("Unable to create destination folder")
+            }
+
+            extractionDir = createExtractionDirectory(archiveFile, destinationDir)
+            when {
+                archiveFile.name.endsWith(".tar.gz", ignoreCase = true) ||
+                    archiveFile.name.endsWith(".tgz", ignoreCase = true) ->
+                    extractTar(GzipCompressorInputStream(BufferedInputStream(FileInputStream(archiveFile))), extractionDir)
+                archiveFile.name.endsWith(".tar.bz2", ignoreCase = true) ||
+                    archiveFile.name.endsWith(".tbz2", ignoreCase = true) ->
+                    extractTar(BZip2CompressorInputStream(BufferedInputStream(FileInputStream(archiveFile))), extractionDir)
+                archiveFile.name.endsWith(".tar.xz", ignoreCase = true) ||
+                    archiveFile.name.endsWith(".txz", ignoreCase = true) ->
+                    extractTar(XZCompressorInputStream(BufferedInputStream(FileInputStream(archiveFile))), extractionDir)
+                archiveFile.extension.equals("zip", ignoreCase = true) ->
+                    extractZip(archiveFile, extractionDir)
+                archiveFile.extension.equals("rar", ignoreCase = true) ->
+                    extractRar(archiveFile, extractionDir)
+                archiveFile.extension.equals("7z", ignoreCase = true) ->
+                    extractSevenZip(archiveFile, extractionDir)
+                archiveFile.extension.equals("tar", ignoreCase = true) ->
+                    extractTar(BufferedInputStream(FileInputStream(archiveFile)), extractionDir)
+                archiveFile.extension.equals("gz", ignoreCase = true) ->
+                    extractCompressedFile(archiveFile, extractionDir, ".gz") {
+                        GzipCompressorInputStream(BufferedInputStream(it))
+                    }
+                archiveFile.extension.equals("bz2", ignoreCase = true) ->
+                    extractCompressedFile(archiveFile, extractionDir, ".bz2") {
+                        BZip2CompressorInputStream(BufferedInputStream(it))
+                    }
+                archiveFile.extension.equals("xz", ignoreCase = true) ->
+                    extractCompressedFile(archiveFile, extractionDir, ".xz") {
+                        XZCompressorInputStream(BufferedInputStream(it))
+                    }
+            }
+            Result.success(extractionDir)
         } catch (e: Exception) {
+            extractionDir?.deleteRecursively()
             Result.failure(e)
         }
+    }
+
+    private val supportedArchiveExtensions = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "tgz", "tbz2", "txz")
+
+    private fun createExtractionDirectory(archiveFile: File, parent: File): File {
+        val lowerName = archiveFile.name.lowercase()
+        val suffix = listOf(".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".tgz", ".txz", ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz")
+            .first { lowerName.endsWith(it) }
+        val baseName = archiveFile.name.dropLast(suffix.length).ifBlank { "Extracted" }
+        var candidate = File(parent, baseName)
+        var index = 2
+        while (candidate.exists()) {
+            candidate = File(parent, "$baseName ($index)")
+            index++
+        }
+        if (!candidate.mkdirs()) throw IOException("Unable to create extraction folder")
+        return candidate
+    }
+
+    private fun extractZip(archiveFile: File, root: File) {
+        ZipInputStream(BufferedInputStream(FileInputStream(archiveFile))).use { input ->
+            var entry = input.nextEntry
+            while (entry != null) {
+                val output = resolveArchiveEntry(root, entry.name)
+                if (entry.isDirectory) {
+                    ensureDirectory(output)
+                } else {
+                    ensureDirectory(output.parentFile ?: root)
+                    output.outputStream().use { input.copyTo(it) }
+                }
+                input.closeEntry()
+                entry = input.nextEntry
+            }
+        }
+    }
+
+    private fun extractTar(input: InputStream, root: File) {
+        TarArchiveInputStream(input).use { archive ->
+            var entry = archive.nextTarEntry
+            while (entry != null) {
+                if (entry.isSymbolicLink || entry.isLink) {
+                    throw IOException("Archive contains unsupported links")
+                }
+                val output = resolveArchiveEntry(root, entry.name)
+                if (entry.isDirectory) {
+                    ensureDirectory(output)
+                } else {
+                    ensureDirectory(output.parentFile ?: root)
+                    output.outputStream().use { archive.copyTo(it) }
+                }
+                entry = archive.nextTarEntry
+            }
+        }
+    }
+
+    private fun extractSevenZip(archiveFile: File, root: File) {
+        SevenZFile.builder().setFile(archiveFile).get().use { archive ->
+            var entry = archive.nextEntry
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (entry != null) {
+                if (!entry.isAntiItem) {
+                    val output = resolveArchiveEntry(root, entry.name)
+                    if (entry.isDirectory) {
+                        ensureDirectory(output)
+                    } else {
+                        ensureDirectory(output.parentFile ?: root)
+                        output.outputStream().use { destination ->
+                            while (true) {
+                                val count = archive.read(buffer)
+                                if (count < 0) break
+                                destination.write(buffer, 0, count)
+                            }
+                        }
+                    }
+                }
+                entry = archive.nextEntry
+            }
+        }
+    }
+
+    private fun extractRar(archiveFile: File, root: File) {
+        Archive(archiveFile).use { archive ->
+            for (entry in archive.fileHeaders) {
+                val output = resolveArchiveEntry(root, entry.fileNameString)
+                if (entry.isDirectory) {
+                    ensureDirectory(output)
+                } else {
+                    ensureDirectory(output.parentFile ?: root)
+                    archive.getInputStream(entry).use { input ->
+                        output.outputStream().use { input.copyTo(it) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun extractCompressedFile(
+        archiveFile: File,
+        root: File,
+        suffix: String,
+        openStream: (FileInputStream) -> InputStream
+    ) {
+        val outputName = archiveFile.name.dropLast(suffix.length).ifBlank { "Extracted" }
+        val output = resolveArchiveEntry(root, outputName)
+        openStream(FileInputStream(archiveFile)).use { input ->
+            output.outputStream().use { input.copyTo(it) }
+        }
+    }
+
+    private fun resolveArchiveEntry(root: File, entryName: String): File {
+        val rootPath = root.canonicalFile
+        val target = File(rootPath, entryName).canonicalFile
+        if (target == rootPath || !target.path.startsWith(rootPath.path + File.separator)) {
+            throw IOException("Archive contains an invalid entry path")
+        }
+        return target
+    }
+
+    private fun ensureDirectory(directory: File) {
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw IOException("Unable to create directory")
+        }
+        if (!directory.isDirectory) throw IOException("Archive entry conflicts with an existing file")
     }
 }

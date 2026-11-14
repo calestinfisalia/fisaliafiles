@@ -88,6 +88,7 @@ import com.fisalia.files.ui.screens.clean.CleanViewModel
 import com.fisalia.files.ui.screens.network.NetworkScreen
 import com.fisalia.files.ui.screens.network.NetworkViewModel
 import com.fisalia.files.ui.screens.settings.SettingsScreen
+import com.fisalia.files.ui.screens.trash.TrashScreen
 import com.fisalia.files.ui.theme.FisaliaFilesTheme
 import com.fisalia.files.ui.theme.GoogleBlueContainer
 import com.fisalia.files.ui.theme.GoogleBluePrimary
@@ -266,7 +267,7 @@ fun MainScreen(
     settingsPrefs: SettingsPreferences = SettingsPreferences.getInstance(LocalContext.current)
 ) {
     var showSettings by remember { mutableStateOf(false) }
-    var showTrashDialog by remember { mutableStateOf(false) }
+    var showTrashScreen by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var privacyTermsType by remember { mutableStateOf<Boolean?>(null) }
     var showSafePinFromDrawer by remember { mutableStateOf(false) }
@@ -296,6 +297,35 @@ fun MainScreen(
         }
     }
 
+    val handleSmbBack: () -> Unit = {
+        val state = browseViewModel.uiState.value
+        val isAtSmbRoot = state.activeConnection != null &&
+            (state.currentPath.isBlank() || state.currentPath == "/") &&
+            !state.isSelectionMode &&
+            !state.isSearchActive
+
+        browseViewModel.navigateBack()
+        if (isAtSmbRoot) {
+            coroutineScope.launch {
+                pagerState.animateScrollToPage(NavTab.BROWSE.ordinal)
+            }
+        }
+    }
+
+    androidx.activity.compose.BackHandler(
+        enabled = browseUiState.activeConnection != null &&
+            selectedTab == NavTab.NETWORK &&
+            activeMedia == null &&
+            !showSettings &&
+            !showTrashScreen &&
+            !showHelpDialog &&
+            privacyTermsType == null &&
+            !showSafePinFromDrawer &&
+            drawerState.isClosed
+    ) {
+        handleSmbBack()
+    }
+
     val handleTabSelect: (NavTab) -> Unit = { tab ->
         if (tab == NavTab.BROWSE && pagerState.currentPage == NavTab.BROWSE.ordinal) {
             browseViewModel.resetToHome()
@@ -309,6 +339,10 @@ fun MainScreen(
         SettingsScreen(
             settingsPrefs = settingsPrefs,
             onBackClick = { showSettings = false }
+        )
+    } else if (showTrashScreen) {
+        TrashScreen(
+            onBackClick = { showTrashScreen = false }
         )
     } else {
         ModalNavigationDrawer(
@@ -427,7 +461,7 @@ fun MainScreen(
                         selected = false,
                         onClick = {
                             coroutineScope.launch { drawerState.close() }
-                            showTrashDialog = true
+                            showTrashScreen = true
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
@@ -495,6 +529,7 @@ fun MainScreen(
                     cleanViewModel = cleanViewModel,
                     browseViewModel = browseViewModel,
                     networkViewModel = networkViewModel,
+                    onBackFromSmb = handleSmbBack,
                     onOpenDrawer = { coroutineScope.launch { drawerState.open() } },
                     onOpenNetworkStorage = { handleTabSelect(NavTab.NETWORK) },
                     onOpenSettings = { showSettings = true },
@@ -506,12 +541,6 @@ fun MainScreen(
                     com.fisalia.files.ui.player.MediaPagerScreen(
                         activeMedia = media,
                         onClose = { browseViewModel.closeMedia() }
-                    )
-                }
-
-                if (showTrashDialog) {
-                    com.fisalia.files.ui.components.TrashDialog(
-                        onDismiss = { showTrashDialog = false }
                     )
                 }
 
@@ -559,6 +588,7 @@ private fun MainTabContent(
     cleanViewModel: CleanViewModel,
     browseViewModel: BrowseViewModel,
     networkViewModel: NetworkViewModel,
+    onBackFromSmb: () -> Unit,
     onOpenDrawer: () -> Unit,
     onOpenNetworkStorage: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -571,8 +601,7 @@ private fun MainTabContent(
     ) { page ->
         when (NavTab.entries[page]) {
             NavTab.CLEAN -> CleanScreen(
-                viewModel = cleanViewModel,
-                onOpenSettings = onOpenSettings
+                viewModel = cleanViewModel
             )
             NavTab.BROWSE -> BrowseScreen(
                 viewModel = browseViewModel,
@@ -586,15 +615,14 @@ private fun MainTabContent(
                     com.fisalia.files.ui.screens.browse.ExplorerScreen(
                         state = browseUiState,
                         viewModel = browseViewModel,
-                        onBackClick = { browseViewModel.navigateBack() }
+                        onBackClick = onBackFromSmb
                     )
                 } else {
                     NetworkScreen(
                         viewModel = networkViewModel,
                         onConnectServer = { conn ->
                             browseViewModel.openNetworkConnection(conn)
-                        },
-                        onOpenSettings = onOpenSettings
+                        }
                     )
                 }
             }

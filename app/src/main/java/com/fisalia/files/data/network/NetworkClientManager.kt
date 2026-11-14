@@ -33,6 +33,16 @@ class NetworkClientManager(
         }
     }
 
+    suspend fun countDirectoryChildren(
+        connection: NetworkConnection,
+        directoryPaths: List<String>
+    ): Result<Map<String, Int>> {
+        return when (connection.type) {
+            ProtocolType.SMB -> smbService.countDirectoryChildren(connection, directoryPaths)
+            else -> Result.success(emptyMap())
+        }
+    }
+
     suspend fun createFolder(connection: NetworkConnection, relativePath: String): Result<Unit> {
         return when (connection.type) {
             ProtocolType.SMB -> smbService.createFolder(connection, relativePath)

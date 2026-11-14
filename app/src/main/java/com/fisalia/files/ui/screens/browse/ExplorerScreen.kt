@@ -26,17 +26,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -79,7 +77,6 @@ import com.fisalia.files.ui.player.ActiveMedia
 import com.fisalia.files.ui.player.AudioPlayerSheet
 import com.fisalia.files.ui.player.ImageViewerScreen
 import com.fisalia.files.ui.player.VideoPlayerScreen
-import com.fisalia.files.ui.theme.GoogleBlueContainer
 import com.fisalia.files.ui.theme.GoogleBluePrimary
 import java.io.File
 
@@ -99,6 +96,24 @@ fun ExplorerScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var singleItemToDelete by remember { mutableStateOf<FileItem?>(null) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showSelectionMenu by remember { mutableStateOf(false) }
+
+    fun prepareTransfer(items: List<FileItem>, isMove: Boolean) {
+        if (items.isEmpty()) return
+        viewModel.setClipboard(items, isCut = isMove)
+        viewModel.clearSelection()
+        android.widget.Toast.makeText(
+            context,
+            context.getString(
+                if (isMove) R.string.toast_files_moved_to_clipboard else R.string.toast_files_copied_to_clipboard,
+                items.size
+            ),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    fun selectedFiles(): List<FileItem> =
+        state.files.filter { it.id in state.selectedItemIds }
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -114,12 +129,124 @@ fun ExplorerScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.selectAll() }) {
-                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.action_select_all))
+                        IconButton(onClick = { prepareTransfer(selectedFiles(), true) }) {
+                            Icon(Icons.Default.SyncAlt, contentDescription = stringResource(R.string.action_move_to))
+                        }
+                        Box {
+                            IconButton(onClick = { showSelectionMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                            }
+                            DropdownMenu(
+                                expanded = showSelectionMenu,
+                                onDismissRequest = { showSelectionMenu = false }
+                            ) {
+                                val selectedItem = selectedFiles().singleOrNull()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_select_all)) },
+                                    onClick = {
+                                        showSelectionMenu = false
+                                        viewModel.selectAll()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_move_to)) },
+                                    onClick = {
+                                        showSelectionMenu = false
+                                        prepareTransfer(selectedFiles(), true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_copy_to)) },
+                                    onClick = {
+                                        showSelectionMenu = false
+                                        prepareTransfer(selectedFiles(), false)
+                                    }
+                                )
+                                if (selectedItem != null) {
+                                    if (selectedItem.protocol == ProtocolType.LOCAL && !selectedItem.isDirectory) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_open_with)) },
+                                            onClick = {
+                                                showSelectionMenu = false
+                                                viewModel.clearSelection()
+                                                FileOperationsHelper.openFile(context, File(selectedItem.path))
+                                            }
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_rename)) },
+                                        onClick = {
+                                            showSelectionMenu = false
+                                            itemToRename = selectedItem
+                                            viewModel.clearSelection()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_info)) },
+                                        onClick = {
+                                            showSelectionMenu = false
+                                            itemForDetails = selectedItem
+                                            viewModel.clearSelection()
+                                        }
+                                    )
+                                    if (selectedItem.protocol == ProtocolType.LOCAL) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(if (viewModel.isFavorite(selectedItem)) R.string.action_unfavorite else R.string.action_favorite)) },
+                                            onClick = {
+                                                showSelectionMenu = false
+                                                viewModel.toggleFavorite(selectedItem)
+                                                viewModel.clearSelection()
+                                            }
+                                        )
+                                        if (!selectedItem.isDirectory) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(R.string.action_move_to_safe)) },
+                                                onClick = {
+                                                    showSelectionMenu = false
+                                                    viewModel.clearSelection()
+                                                    viewModel.moveToSafeFolder(
+                                                        selectedItem,
+                                                        onSuccess = {
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                context.getString(R.string.toast_moved_to_safe),
+                                                                android.widget.Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        },
+                                                        onError = { error ->
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                error,
+                                                                android.widget.Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                if (selectedItem?.protocol == ProtocolType.LOCAL && selectedItem.isArchive) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.action_extract_archive)) },
+                                        onClick = {
+                                            showSelectionMenu = false
+                                            viewModel.clearSelection()
+                                            viewModel.extractArchive(selectedItem) { destination ->
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.archive_extracted_to, destination.name),
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = GoogleBlueContainer
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             } else {
@@ -215,32 +342,6 @@ fun ExplorerScreen(
                         }
 
                         IconButton(onClick = {
-                            val selected = state.files.filter { state.selectedItemIds.contains(it.id) }
-                            if (selected.isNotEmpty()) {
-                                viewModel.setClipboard(selected, isCut = false)
-                                viewModel.clearSelection()
-                                android.widget.Toast.makeText(context, "${selected.size} file disalin ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.action_copy_to))
-                            }
-                        }
-
-                        IconButton(onClick = {
-                            val selected = state.files.filter { state.selectedItemIds.contains(it.id) }
-                            if (selected.isNotEmpty()) {
-                                viewModel.setClipboard(selected, isCut = true)
-                                viewModel.clearSelection()
-                                android.widget.Toast.makeText(context, "${selected.size} file dipotong ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.ContentCut, contentDescription = stringResource(R.string.action_move_to))
-                            }
-                        }
-
-                        IconButton(onClick = {
                             showDeleteConfirmDialog = true
                         }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -292,7 +393,7 @@ fun ExplorerScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Text(
-                                        text = "Tempel (${state.clipboard.files.size})",
+                                        text = stringResource(R.string.action_paste_count, state.clipboard.files.size),
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         style = MaterialTheme.typography.labelLarge,
@@ -305,7 +406,7 @@ fun ExplorerScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "Tempel",
+                                        contentDescription = stringResource(R.string.action_paste),
                                         tint = GoogleBluePrimary,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -316,7 +417,7 @@ fun ExplorerScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Batal",
+                                        contentDescription = stringResource(R.string.btn_cancel),
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -431,48 +532,6 @@ fun ExplorerScreen(
                                 },
                                 onCheckedChange = {
                                     viewModel.toggleItemSelection(item.id)
-                                },
-                                onActionShare = {
-                                    FileOperationsHelper.shareFiles(context, listOf(File(item.path)))
-                                },
-                                onActionOpenWith = {
-                                    FileOperationsHelper.openFile(context, File(item.path))
-                                },
-                                onActionRename = {
-                                    itemToRename = item
-                                },
-                                onActionDelete = {
-                                    singleItemToDelete = item
-                                },
-                                onActionDetails = {
-                                    itemForDetails = item
-                                },
-                                onActionZip = {
-                                    viewModel.toggleItemSelection(item.id)
-                                    viewModel.zipSelectedItems(item.name.substringBeforeLast('.'))
-                                },
-                                onActionCopy = {
-                                    viewModel.setClipboardSingle(item, isCut = false)
-                                    android.widget.Toast.makeText(context, "Disalin ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
-                                },
-                                onActionMove = {
-                                    viewModel.setClipboardSingle(item, isCut = true)
-                                    android.widget.Toast.makeText(context, "Dipotong ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
-                                },
-                                isFavorite = viewModel.isFavorite(item),
-                                onActionFavorite = {
-                                    viewModel.toggleFavorite(item)
-                                },
-                                onActionMoveToSafe = {
-                                    viewModel.moveToSafeFolder(
-                                        item,
-                                        onSuccess = {
-                                            android.widget.Toast.makeText(context, "Dipindahkan ke Folder Aman", android.widget.Toast.LENGTH_SHORT).show()
-                                        },
-                                        onError = { err ->
-                                            android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
                                 }
                             )
                         }
@@ -518,14 +577,17 @@ fun ExplorerScreen(
                                     viewModel.toggleItemSelection(item.id)
                                     viewModel.zipSelectedItems(item.name.substringBeforeLast('.'))
                                 },
-                                onActionCopy = {
-                                    viewModel.setClipboardSingle(item, isCut = false)
-                                    android.widget.Toast.makeText(context, "Disalin ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
+                                onActionExtract = {
+                                    viewModel.extractArchive(item) { destination ->
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            context.getString(R.string.archive_extracted_to, destination.name),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 },
-                                onActionMove = {
-                                    viewModel.setClipboardSingle(item, isCut = true)
-                                    android.widget.Toast.makeText(context, "Dipotong ke papan klip", android.widget.Toast.LENGTH_SHORT).show()
-                                },
+                                onActionCopy = { prepareTransfer(listOf(item), false) },
+                                onActionMove = { prepareTransfer(listOf(item), true) },
                                 isFavorite = viewModel.isFavorite(item),
                                 onActionFavorite = {
                                     viewModel.toggleFavorite(item)

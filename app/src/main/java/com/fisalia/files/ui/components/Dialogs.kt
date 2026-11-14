@@ -480,48 +480,6 @@ fun AddServerDialog(
 }
 
 @Composable
-fun TrashDialog(
-    onDismiss: () -> Unit,
-    onEmptyTrash: () -> Unit = {}
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.drawer_trash))
-            }
-        },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.drawer_trash_empty),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "File yang dihapus akan disimpan di sini dan dapat dipulihkan atau dibersihkan untuk mengosongkan ruang.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text(stringResource(R.string.btn_ok))
-            }
-        }
-    )
-}
-
-@Composable
 fun HelpFeedbackDialog(
     onDismiss: () -> Unit
 ) {
@@ -602,19 +560,13 @@ fun PrivacyTermsDialog(
             ) {
                 if (isPrivacy) {
                     Text(
-                        text = "Kebijakan Privasi Fisalia Files\n\n" +
-                                "1. Pengumpulan Data: Fisalia Files beroperasi secara lokal dan tidak mengumpulkan, menjual, atau mentransfer file pribadi Anda ke server pihak ketiga mana pun.\n\n" +
-                                "2. Izin Penyimpanan: Izin akses penyimpanan (MANAGE_EXTERNAL_STORAGE) semata-mata digunakan untuk membaca, mengelola, menyalin, dan memutar file multimedia di perangkat Anda.\n\n" +
-                                "3. Koneksi Jaringan: Kredensial server SMB, FTP, SFTP, dan WebDAV disimpan secara aman di perangkat lokal Anda.",
+                        text = stringResource(R.string.privacy_policy_content),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
-                        text = "Syarat & Ketentuan Layanan\n\n" +
-                                "1. Penggunaan Aplikasi: Anda diizinkan menggunakan Fisalia Files untuk manajemen file pribadi dan profesional.\n\n" +
-                                "2. Keamanan: Anda bertanggung jawab penuh atas PIN Folder Aman dan kredensial server jaringan yang Anda simpan.\n\n" +
-                                "3. Tanpa Jaminan: Perangkat lunak ini disediakan apa adanya, dengan pembaruan dan penyempurnaan berkala.",
+                        text = stringResource(R.string.terms_of_service_content),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

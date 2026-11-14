@@ -12,8 +12,8 @@ android {
         applicationId = "com.fisalia.files"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -79,6 +79,8 @@ dependencies {
     implementation(libs.commons.net)
     implementation(libs.jsch)
     implementation(libs.gson)
+    implementation(libs.commons.compress)
+    implementation(libs.junrar)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

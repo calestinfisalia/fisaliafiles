@@ -181,8 +181,9 @@ class LocalFileRepository(private val context: Context) {
                 if (result.isEmpty()) scanByExtensions(root, setOf("apk"), result)
             }
             FileCategory.ARCHIVES -> {
-                queryMediaStoreFilesByExtensions(setOf("zip", "rar", "7z", "tar", "gz"), result)
-                if (result.isEmpty()) scanByExtensions(root, setOf("zip", "rar", "7z", "tar", "gz"), result)
+                val extensions = setOf("zip", "rar", "7z", "tar", "gz", "bz2", "xz", "tgz", "tbz2", "txz")
+                queryMediaStoreFilesByExtensions(extensions, result)
+                if (result.isEmpty()) scanByExtensions(root, extensions, result)
             }
         }
 

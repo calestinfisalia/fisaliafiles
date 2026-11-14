@@ -15,13 +15,20 @@
     <string name="drawer_safe_folder">Folder Aman</string>
     <string name="drawer_trash">Sampah</string>
     <string name="drawer_trash_empty">Sampah kosong</string>
+    <string name="trash_empty_description">File yang dihapus akan muncul di sini. Anda dapat memulihkannya atau menghapusnya secara permanen untuk mengosongkan ruang.</string>
     <string name="drawer_settings">Pengaturan</string>
     <string name="drawer_help">Bantuan &amp; umpan balik</string>
     <string name="drawer_privacy">Kebijakan Privasi</string>
     <string name="drawer_terms">Ketentuan Layanan</string>
+    <string name="privacy_policy_content">1. Pengumpulan data: Fisalia Files berjalan secara lokal dan tidak mengumpulkan, menjual, atau mengirim file pribadi Anda ke server pihak ketiga.\n\n2. Akses penyimpanan: Izin penyimpanan (MANAGE_EXTERNAL_STORAGE) hanya digunakan untuk menelusuri, mengelola, menyalin, dan memutar file media di perangkat Anda.\n\n3. Koneksi jaringan: Kredensial server SMB, FTP, SFTP, dan WebDAV disimpan secara lokal di perangkat Anda.</string>
+    <string name="terms_of_service_content">1. Penggunaan aplikasi: Anda dapat menggunakan Fisalia Files untuk mengelola file pribadi maupun profesional.\n\n2. Keamanan: Anda bertanggung jawab atas PIN Folder Aman dan kredensial server jaringan yang disimpan.\n\n3. Tanpa jaminan: Perangkat lunak ini disediakan apa adanya dan dapat diperbarui atau disempurnakan secara berkala.</string>
+    <string name="help_dialog_title">Bantuan &amp; masukan</string>
+    <string name="help_about_title">Fisalia Files v%1$s</string>
+    <string name="help_about_description">Fisalia Files adalah pengelola file modern dengan desain terinspirasi Material You, pemutar media bawaan (ExoPlayer), dan dukungan penyimpanan jaringan SMB, FTP, SFTP, serta WebDAV.</string>
+    <string name="help_feedback_button">Kirim masukan melalui email</string>
 
     <!-- Search -->
-    <string name="search_hint">Telusuri di Files</string>
+    <string name="search_hint">Cari</string>
     <string name="search_results">Hasil Pencarian</string>
     <string name="no_search_results">Tidak ada file yang cocok dengan \"%1$s\"</string>
 
@@ -105,13 +112,18 @@
     <string name="action_copy_to">Salin ke...</string>
     <string name="action_move">Pindahkan</string>
     <string name="action_move_to">Pindahkan ke...</string>
+    <string name="action_more">Opsi lainnya</string>
     <string name="action_info">Detail</string>
     <string name="action_zip">Kompres ke ZIP</string>
-    <string name="action_unzip">Ekstrak ZIP di sini</string>
+    <string name="action_unzip">Ekstrak arsip</string>
+    <string name="action_extract_archive">Ekstrak ke folder</string>
+    <string name="archive_extracted_to">Diekstrak ke %1$s</string>
     <string name="action_new_folder">Folder Baru</string>
     <string name="action_select_all">Pilih Semua</string>
     <string name="action_paste">Tempel di Sini</string>
     <string name="empty_folder">Folder ini kosong</string>
+    <string name="folder_item_count">%1$d item</string>
+    <string name="folder_label">Folder</string>
     <string name="items_selected">%1$d dipilih</string>
 
     <!-- Dialogs -->

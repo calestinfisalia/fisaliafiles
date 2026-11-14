@@ -438,7 +438,7 @@ fun VideoPlayerScreen(
                         thumb = {
                             Box(
                                 modifier = Modifier
-                                    .size(12.dp)
+                                        .size(14.dp)
                                     .clip(CircleShape)
                                     .background(GoogleBluePrimary)
                             )
@@ -446,7 +446,7 @@ fun VideoPlayerScreen(
                         track = { sliderState ->
                             SliderDefaults.Track(
                                 sliderState = sliderState,
-                                modifier = Modifier.height(2.5.dp),
+                                modifier = Modifier.height(4.dp),
                                 colors = SliderDefaults.colors(
                                     activeTrackColor = GoogleBluePrimary,
                                     inactiveTrackColor = Color.White.copy(alpha = 0.35f)
@@ -455,7 +455,7 @@ fun VideoPlayerScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(20.dp)
+                            .height(32.dp)
                     )
 
                     Row(

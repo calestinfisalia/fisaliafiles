@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 data class NetworkUiState(
     val connections: List<NetworkConnection> = emptyList(),
+    val storageCapacities: Map<String, Pair<Long, Long>> = emptyMap(),
     val isTesting: Boolean = false,
     val testSuccess: Boolean? = null,
     val testErrorMessage: String? = null
@@ -33,7 +34,21 @@ class NetworkViewModel(application: Application) : AndroidViewModel(application)
 
     fun loadConnections() {
         val list = prefs.getConnections()
-        _uiState.update { it.copy(connections = list) }
+        _uiState.update { it.copy(connections = list, storageCapacities = emptyMap()) }
+        list.forEach { connection ->
+            viewModelScope.launch {
+                val capacity = clientManager.getStorageCapacity(connection)
+                if (capacity != null) {
+                    _uiState.update { current ->
+                        if (current.connections.any { it == connection }) {
+                            current.copy(storageCapacities = current.storageCapacities + (connection.id to capacity))
+                        } else {
+                            current
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun saveConnection(connection: NetworkConnection) {
