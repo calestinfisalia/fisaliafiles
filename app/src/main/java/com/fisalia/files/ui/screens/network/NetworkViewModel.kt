@@ -3,9 +3,12 @@ package com.fisalia.files.ui.screens.network
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.fisalia.files.R
 import com.fisalia.files.data.local.ConnectionPreferences
 import com.fisalia.files.data.model.NetworkConnection
+import com.fisalia.files.data.model.toUserMessage
 import com.fisalia.files.data.network.NetworkClientManager
+import com.fisalia.files.data.network.isSmbShareNotFound
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,7 +70,18 @@ class NetworkViewModel(application: Application) : AndroidViewModel(application)
             result.onSuccess {
                 onComplete(true, null)
             }.onFailure { err ->
-                onComplete(false, err.localizedMessage)
+                val message = if (
+                    connection.type == com.fisalia.files.data.model.ProtocolType.SMB &&
+                    err.isSmbShareNotFound()
+                ) {
+                    getApplication<Application>().getString(
+                        R.string.network_smb_share_not_found,
+                        connection.shareOrBasePath
+                    )
+                } else {
+                    err.toUserMessage(getApplication())
+                }
+                onComplete(false, message)
             }
         }
     }

@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -64,8 +62,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -133,61 +129,11 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(wallpaperBg) {
                 if (wallpaperBg) {
-                    try {
-                        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-                        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                    } catch (_: Throwable) {}
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 } else {
-                    try {
-                        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-                        window.setBackgroundDrawable(null)
-                    } catch (_: Throwable) {}
-                }
-            }
-
-            val wallpaperBitmap by androidx.compose.runtime.produceState<ImageBitmap?>(
-                initialValue = null,
-                key1 = wallpaperBg
-            ) {
-                if (!wallpaperBg) {
-                    value = null
-                    return@produceState
-                }
-
-                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val wallpaperManager = android.app.WallpaperManager.getInstance(applicationContext)
-                    val drawable = try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            wallpaperManager.getDrawable(android.app.WallpaperManager.FLAG_SYSTEM)
-                        } else {
-                            wallpaperManager.drawable ?: wallpaperManager.peekDrawable()
-                        }
-                    } catch (error: SecurityException) {
-                        android.util.Log.w("MainActivity", "Could not read the system wallpaper", error)
-                        try {
-                            wallpaperManager.peekDrawable()
-                        } catch (fallbackError: Exception) {
-                            android.util.Log.e("MainActivity", "Could not load the wallpaper fallback", fallbackError)
-                            null
-                        }
-                    } catch (error: Exception) {
-                        android.util.Log.e("MainActivity", "Could not load the system wallpaper", error)
-                        null
-                    }
-
-                    if (drawable == null) {
-                        android.util.Log.w("MainActivity", "System wallpaper was not available")
-                        null
-                    } else {
-                        val displayMetrics = applicationContext.resources.displayMetrics
-                        val targetWidth = displayMetrics.widthPixels.coerceAtLeast(1)
-                        val targetHeight = displayMetrics.heightPixels.coerceAtLeast(1)
-                        val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-                        val canvas = Canvas(bitmap)
-                        drawable.setBounds(0, 0, targetWidth, targetHeight)
-                        drawable.draw(canvas)
-                        bitmap.asImageBitmap()
-                    }
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+                    window.setBackgroundDrawable(null)
                 }
             }
 
@@ -205,14 +151,6 @@ class MainActivity : ComponentActivity() {
                         )
                 ) {
                     if (wallpaperBg) {
-                        wallpaperBitmap?.let { bitmap ->
-                            Image(
-                                bitmap = bitmap,
-                                contentDescription = null,
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()

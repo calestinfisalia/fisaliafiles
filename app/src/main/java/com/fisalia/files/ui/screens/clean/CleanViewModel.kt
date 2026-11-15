@@ -8,6 +8,7 @@ import com.fisalia.files.data.local.DuplicateGroup
 import com.fisalia.files.data.local.FileOperationsHelper
 import com.fisalia.files.data.local.LocalFileRepository
 import com.fisalia.files.data.model.FileItem
+import com.fisalia.files.data.model.toUserMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,7 +70,7 @@ class CleanViewModel(application: Application) : AndroidViewModel(application) {
                 throw error
             } catch (error: Exception) {
                 Log.e("CleanViewModel", "Failed to scan cleanup suggestions", error)
-                _uiState.update { it.copy(scanError = error.localizedMessage) }
+                _uiState.update { it.copy(scanError = error.toUserMessage(getApplication())) }
             } finally {
                 _uiState.update { it.copy(isScanning = false) }
             }
@@ -87,7 +88,7 @@ class CleanViewModel(application: Application) : AndroidViewModel(application) {
                 throw error
             } catch (error: Exception) {
                 Log.e("CleanViewModel", "Failed to scan duplicate files", error)
-                _uiState.update { it.copy(scanError = error.localizedMessage) }
+                _uiState.update { it.copy(scanError = error.toUserMessage(getApplication())) }
             } finally {
                 _uiState.update { it.copy(isScanningDuplicates = false) }
             }
@@ -131,7 +132,7 @@ class CleanViewModel(application: Application) : AndroidViewModel(application) {
             } catch (error: Exception) {
                 Log.e("CleanViewModel", "Failed to scan large files and folders", error)
                 _uiState.update {
-                    it.copy(largeStorageScanError = error.localizedMessage)
+                    it.copy(largeStorageScanError = error.toUserMessage(getApplication()))
                 }
             } finally {
                 _uiState.update { it.copy(isScanningLargeStorage = false) }

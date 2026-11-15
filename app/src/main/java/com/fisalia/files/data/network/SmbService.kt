@@ -5,6 +5,8 @@ import com.fisalia.files.data.local.FileOperationsHelper
 import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.NetworkConnection
 import com.fisalia.files.data.model.ProtocolType
+import com.fisalia.files.data.model.UserMessageException
+import com.fisalia.files.R
 import com.hierynomus.msdtyp.AccessMask
 import com.hierynomus.msfscc.FileAttributes
 import com.hierynomus.mssmb2.SMB2CreateDisposition
@@ -39,6 +41,12 @@ class SmbService {
     }
 
     private fun connect(connection: NetworkConnection): Pair<Connection, Session> {
+        if (connection.shareOrBasePath.isBlank()) {
+            throw UserMessageException(R.string.error_smb_share_required)
+        }
+        if (connection.shareOrBasePath.contains('/') || connection.shareOrBasePath.contains('\\')) {
+            throw UserMessageException(R.string.error_smb_share_name_only)
+        }
         val conn = client.connect(connection.host, connection.port)
         val auth = if (connection.isAnonymous || connection.username.isBlank()) {
             AuthenticationContext.anonymous()
@@ -81,10 +89,8 @@ class SmbService {
         try {
             val (conn, session) = connect(connection)
             try {
-                if (connection.shareOrBasePath.isNotBlank()) {
-                    val share = session.connectShare(connection.shareOrBasePath) as DiskShare
-                    share.close()
-                }
+                val share = session.connectShare(connection.shareOrBasePath) as DiskShare
+                share.close()
                 Result.success(true)
             } finally {
                 session.close()

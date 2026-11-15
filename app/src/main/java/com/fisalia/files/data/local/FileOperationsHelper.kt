@@ -7,6 +7,7 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.fisalia.files.R
 import com.fisalia.files.data.model.FileItem
+import com.fisalia.files.data.model.UserMessageException
 import com.github.junrar.Archive
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
@@ -19,7 +20,6 @@ import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -122,19 +122,21 @@ object FileOperationsHelper {
     suspend fun createFolder(parentDir: File, folderName: String): Result<File> = withContext(Dispatchers.IO) {
         val newFolder = File(parentDir, folderName)
         if (newFolder.exists()) {
-            Result.failure(Exception("Folder dengan nama tersebut sudah ada."))
+            Result.failure(UserMessageException(R.string.error_folder_exists))
         } else if (newFolder.mkdirs()) {
             Result.success(newFolder)
         } else {
-            Result.failure(Exception("Gagal membuat folder."))
+            Result.failure(UserMessageException(R.string.error_folder_create_failed))
         }
     }
 
     suspend fun rename(file: File, newName: String): Result<File> = withContext(Dispatchers.IO) {
-        val parent = file.parentFile ?: return@withContext Result.failure(Exception("Tidak dapat menemukan direktori induk."))
+        val parent = file.parentFile ?: return@withContext Result.failure(
+            UserMessageException(R.string.error_parent_directory_missing)
+        )
         val target = File(parent, newName)
         if (target.exists()) {
-            Result.failure(Exception("Nama '$newName' sudah digunakan."))
+            Result.failure(UserMessageException(R.string.error_name_already_used, listOf(newName)))
         } else if (file.renameTo(target)) {
             Result.success(target)
         } else {
@@ -148,7 +150,7 @@ object FileOperationsHelper {
                 }
                 Result.success(target)
             } catch (e: Exception) {
-                Result.failure(Exception("Gagal mengganti nama file: ${e.localizedMessage}"))
+                Result.failure(UserMessageException(R.string.error_rename_failed, cause = e))
             }
         }
     }
@@ -230,12 +232,17 @@ object FileOperationsHelper {
     suspend fun extractArchive(archiveFile: File, destinationDir: File): Result<File> = withContext(Dispatchers.IO) {
         var extractionDir: File? = null
         try {
-            require(archiveFile.isFile) { "Archive file does not exist" }
-            require(archiveFile.extension.lowercase() in supportedArchiveExtensions) {
-                "Unsupported archive format: ${archiveFile.extension}"
+            if (!archiveFile.isFile) {
+                throw UserMessageException(R.string.error_archive_file_missing)
+            }
+            if (archiveFile.extension.lowercase() !in supportedArchiveExtensions) {
+                throw UserMessageException(
+                    R.string.error_archive_format_unsupported,
+                    listOf(archiveFile.extension)
+                )
             }
             if (!destinationDir.exists() && !destinationDir.mkdirs()) {
-                throw IOException("Unable to create destination folder")
+                throw UserMessageException(R.string.error_archive_destination_create_failed)
             }
 
             extractionDir = createExtractionDirectory(archiveFile, destinationDir)
@@ -290,7 +297,7 @@ object FileOperationsHelper {
             candidate = File(parent, "$baseName ($index)")
             index++
         }
-        if (!candidate.mkdirs()) throw IOException("Unable to create extraction folder")
+        if (!candidate.mkdirs()) throw UserMessageException(R.string.error_archive_extraction_folder_create_failed)
         return candidate
     }
 
@@ -316,7 +323,7 @@ object FileOperationsHelper {
             var entry = archive.nextTarEntry
             while (entry != null) {
                 if (entry.isSymbolicLink || entry.isLink) {
-                    throw IOException("Archive contains unsupported links")
+                    throw UserMessageException(R.string.error_archive_links_unsupported)
                 }
                 val output = resolveArchiveEntry(root, entry.name)
                 if (entry.isDirectory) {
@@ -388,15 +395,17 @@ object FileOperationsHelper {
         val rootPath = root.canonicalFile
         val target = File(rootPath, entryName).canonicalFile
         if (target == rootPath || !target.path.startsWith(rootPath.path + File.separator)) {
-            throw IOException("Archive contains an invalid entry path")
+            throw UserMessageException(R.string.error_archive_entry_path_invalid)
         }
         return target
     }
 
     private fun ensureDirectory(directory: File) {
         if (!directory.exists() && !directory.mkdirs()) {
-            throw IOException("Unable to create directory")
+            throw UserMessageException(R.string.error_archive_directory_create_failed)
         }
-        if (!directory.isDirectory) throw IOException("Archive entry conflicts with an existing file")
+        if (!directory.isDirectory) {
+            throw UserMessageException(R.string.error_archive_entry_conflicts)
+        }
     }
 }

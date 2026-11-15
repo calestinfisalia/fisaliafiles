@@ -345,9 +345,21 @@ fun AddServerDialog(
                     label = {
                         Text(stringResource(R.string.share_path))
                     },
+                    placeholder = {
+                        if (selectedProtocol == ProtocolType.SMB) {
+                            Text(stringResource(R.string.smb_share_example))
+                        }
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (selectedProtocol == ProtocolType.SMB) {
+                    Text(
+                        text = stringResource(R.string.smb_share_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 if (selectedProtocol == ProtocolType.SMB) {
                     OutlinedTextField(
@@ -408,7 +420,14 @@ fun AddServerDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (success) "Koneksi Berhasil!" else "Gagal: ${errorMsg ?: "Cek host dan port"}",
+                            text = if (success) {
+                                stringResource(R.string.connection_success)
+                            } else {
+                                stringResource(
+                                    R.string.connection_failed,
+                                    errorMsg ?: stringResource(R.string.connection_check_host_port)
+                                )
+                            },
                             fontSize = 12.sp,
                             color = if (success) GoogleGreen else GoogleRed
                         )
@@ -439,7 +458,9 @@ fun AddServerDialog(
                             testResult = Pair(success, err)
                         }
                     },
-                    enabled = host.isNotBlank() && !isTesting
+                    enabled = host.isNotBlank() &&
+                        (selectedProtocol != ProtocolType.SMB || sharePath.isNotBlank()) &&
+                        !isTesting
                 ) {
                     if (isTesting) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -465,7 +486,8 @@ fun AddServerDialog(
                         )
                         onSave(conn)
                     },
-                    enabled = host.isNotBlank()
+                    enabled = host.isNotBlank() &&
+                        (selectedProtocol != ProtocolType.SMB || sharePath.isNotBlank())
                 ) {
                     Text(stringResource(R.string.btn_save))
                 }
@@ -590,6 +612,8 @@ fun SafeFolderPinDialog(
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val pinMinimumLengthError = stringResource(R.string.error_pin_minimum_length)
+    val pinMismatchError = stringResource(R.string.error_pin_mismatch)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -665,11 +689,11 @@ fun SafeFolderPinDialog(
             Button(
                 onClick = {
                     if (pin.length < 4) {
-                        errorMessage = "PIN minimal 4 digit"
+                        errorMessage = pinMinimumLengthError
                         return@Button
                     }
                     if (isSettingPin && pin != confirmPin) {
-                        errorMessage = "PIN tidak cocok"
+                        errorMessage = pinMismatchError
                         return@Button
                     }
                     onConfirm(pin)

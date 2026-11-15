@@ -3,7 +3,24 @@ package com.fisalia.files.data.network
 import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.NetworkConnection
 import com.fisalia.files.data.model.ProtocolType
+import com.fisalia.files.data.model.UserMessageException
+import com.fisalia.files.R
 import java.io.File
+
+internal fun Throwable.isSmbShareNotFound(): Boolean {
+    var cause: Throwable? = this
+    while (cause != null) {
+        val message = cause.message.orEmpty()
+        if (
+            message.contains("STATUS_BAD_NETWORK_NAME", ignoreCase = true) ||
+            message.contains("0xc00000cc", ignoreCase = true)
+        ) {
+            return true
+        }
+        cause = cause.cause
+    }
+    return false
+}
 
 class NetworkClientManager(
     private val smbService: SmbService = SmbService(),
@@ -14,7 +31,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.testConnection(connection)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.testConnection(connection)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -29,7 +46,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.listFiles(connection, relativePath)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.listFiles(connection, relativePath)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -47,7 +64,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.createFolder(connection, relativePath)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.createFolder(connection, relativePath)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -55,7 +72,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.delete(connection, relativePath, isDirectory)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.delete(connection, relativePath, isDirectory)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -68,7 +85,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.downloadFile(connection, remotePath, destinationFile, onProgress)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.downloadFile(connection, remotePath, destinationFile, onProgress)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -76,7 +93,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.rename(connection, oldRelativePath, newRelativePath)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.rename(connection, oldRelativePath, newRelativePath)
-            else -> Result.failure(UnsupportedOperationException("Protokol ${connection.type} belum didukung."))
+            else -> Result.failure(UserMessageException(R.string.error_network_protocol_unsupported, listOf(connection.type)))
         }
     }
 
@@ -89,7 +106,7 @@ class NetworkClientManager(
         return when (connection.type) {
             ProtocolType.SMB -> smbService.uploadFile(connection, localFile, remotePath, onProgress)
             ProtocolType.FTP, ProtocolType.FTPS -> ftpService.uploadFile(connection, localFile, remotePath, onProgress)
-            else -> Result.failure(UnsupportedOperationException("Upload belum didukung untuk protokol ${connection.type}."))
+            else -> Result.failure(UserMessageException(R.string.error_network_upload_unsupported, listOf(connection.type)))
         }
     }
 }

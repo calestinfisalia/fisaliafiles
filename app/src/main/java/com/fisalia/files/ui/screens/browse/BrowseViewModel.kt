@@ -15,7 +15,10 @@ import com.fisalia.files.data.model.ProtocolType
 import com.fisalia.files.data.model.SortField
 import com.fisalia.files.data.model.SortOption
 import com.fisalia.files.data.model.StorageItem
+import com.fisalia.files.data.model.UserMessageException
+import com.fisalia.files.data.model.toUserMessage
 import com.fisalia.files.data.network.NetworkClientManager
+import com.fisalia.files.data.network.isSmbShareNotFound
 import com.fisalia.files.R
 import com.fisalia.files.ui.player.ActiveMedia
 import kotlinx.coroutines.Dispatchers
@@ -386,10 +389,25 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
             }.onFailure { error ->
+                val message = if (
+                    connection.type == ProtocolType.SMB &&
+                    error.isSmbShareNotFound()
+                ) {
+                    getApplication<Application>().getString(
+                        R.string.network_smb_share_not_found,
+                        connection.shareOrBasePath
+                    )
+                } else {
+                    error.toUserMessage(getApplication())
+                }
                 _uiState.update {
                     it.copy(
+                        files = emptyList(),
                         isLoading = false,
-                        errorMessage = "Gagal memuat jaringan: ${error.localizedMessage}"
+                        errorMessage = getApplication<Application>().getString(
+                            R.string.network_load_failed,
+                            message
+                        )
                     )
                 }
             }
@@ -466,14 +484,14 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 networkManager.createFolder(state.activeConnection, rel).onSuccess {
                     loadNetworkDirectory(state.activeConnection, state.currentPath)
                 }.onFailure { err ->
-                    _uiState.update { it.copy(errorMessage = err.message) }
+                    _uiState.update { it.copy(errorMessage = err.toUserMessage(getApplication())) }
                 }
             } else {
                 val dir = File(state.currentPath)
                 FileOperationsHelper.createFolder(dir, folderName).onSuccess {
                     refreshCurrentView()
                 }.onFailure { err ->
-                    _uiState.update { it.copy(errorMessage = err.message) }
+                    _uiState.update { it.copy(errorMessage = err.toUserMessage(getApplication())) }
                 }
             }
         }
@@ -488,13 +506,13 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 networkManager.rename(state.activeConnection, item.path, newRelPath).onSuccess {
                     loadNetworkDirectory(state.activeConnection, state.currentPath)
                 }.onFailure { err ->
-                    _uiState.update { it.copy(errorMessage = err.message) }
+                    _uiState.update { it.copy(errorMessage = err.toUserMessage(getApplication())) }
                 }
             } else {
                 FileOperationsHelper.rename(File(item.path), newName).onSuccess {
                     refreshCurrentView()
                 }.onFailure { err ->
-                    _uiState.update { it.copy(errorMessage = err.message) }
+                    _uiState.update { it.copy(errorMessage = err.toUserMessage(getApplication())) }
                 }
             }
         }
@@ -592,15 +610,15 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     sourceConnection == null && destinationConnection == null -> {
                         val targetDirectory = File(destinationPath)
                         if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
-                            error("Unable to create the destination folder")
+                            throw UserMessageException(R.string.error_transfer_destination_create_failed)
                         }
                         for (item in clip.files) {
                             val source = File(item.path)
                             if (item.isDirectory) {
                                 val sourcePath = source.canonicalPath
                                 val targetPath = targetDirectory.canonicalPath
-                                require(targetPath != sourcePath && !targetPath.startsWith("$sourcePath${File.separator}")) {
-                                    "A folder cannot be transferred into itself"
+                                if (targetPath == sourcePath || targetPath.startsWith("$sourcePath${File.separator}")) {
+                                    throw UserMessageException(R.string.error_transfer_into_self)
                                 }
                             }
                             if (clip.isCut) {
@@ -628,7 +646,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     sourceConnection != null && destinationConnection == null -> {
                         val targetDirectory = File(destinationPath)
                         if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
-                            error("Unable to create the destination folder")
+                            throw UserMessageException(R.string.error_transfer_destination_create_failed)
                         }
                         for (item in clip.files) {
                             val localTarget = File(targetDirectory, item.name)
@@ -646,7 +664,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     sourceConnection != null && destinationConnection != null -> {
                         val cacheDirectory = File(getApplication<Application>().cacheDir, "remote_transfer")
                         if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
-                            error("Unable to create the temporary transfer folder")
+                            throw UserMessageException(R.string.error_transfer_temporary_folder_create_failed)
                         }
                         val cleanTarget = destinationPath.trim('/')
                         for (item in clip.files) {
@@ -669,7 +687,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 onSuccess()
             } catch (error: Exception) {
-                _uiState.update { it.copy(errorMessage = error.localizedMessage ?: error.message) }
+                _uiState.update { it.copy(errorMessage = error.toUserMessage(getApplication())) }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -719,7 +737,9 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
         val archive = File(fileItem.path)
         val parent = archive.parentFile
         if (fileItem.protocol != ProtocolType.LOCAL || parent == null) {
-            _uiState.update { it.copy(errorMessage = "This archive cannot be extracted here") }
+            _uiState.update {
+                it.copy(errorMessage = getApplication<Application>().getString(R.string.error_archive_location_unsupported))
+            }
             return
         }
 
@@ -731,7 +751,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 loadRecentFiles()
                 onSuccess(destination)
             }.onFailure { error ->
-                _uiState.update { it.copy(errorMessage = error.localizedMessage ?: error.message) }
+                _uiState.update { it.copy(errorMessage = error.toUserMessage(getApplication())) }
             }
             _uiState.update { it.copy(isLoading = false) }
         }
@@ -764,7 +784,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
         val connection = _uiState.value.activeConnection
             ?: connectionPrefs.getConnectionById(fileItem.connectionId ?: "")
         if (connection == null) {
-            onError("Koneksi jaringan tidak ditemukan")
+            onError(getApplication<Application>().getString(R.string.error_network_connection_not_found))
             return
         }
 
@@ -806,7 +826,13 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }.onFailure { err ->
                 if (tempFile.exists()) tempFile.delete()
-                onError(err.localizedMessage ?: "Gagal mengunduh file media")
+                onError(
+                    if (err.localizedMessage != null) {
+                        err.toUserMessage(getApplication())
+                    } else {
+                        getApplication<Application>().getString(R.string.error_media_download_failed)
+                    }
+                )
             }
         }
     }
@@ -884,7 +910,9 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
             val safeDir = File(app.filesDir, ".safe_folder").apply { mkdirs() }
             val srcFile = File(fileItem.path)
             if (!srcFile.exists()) {
-                withContext(Dispatchers.Main) { onError("File tidak ditemukan") }
+                withContext(Dispatchers.Main) {
+                    onError(app.getString(R.string.error_file_not_found))
+                }
                 return@launch
             }
             val destFile = File(safeDir, srcFile.name)
@@ -894,7 +922,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     loadDirectory(_uiState.value.currentPath)
                     onSuccess()
                 } else {
-                    onError("Gagal memindahkan ke Folder Aman")
+                    onError(app.getString(R.string.error_safe_folder_move_failed))
                 }
             }
         }

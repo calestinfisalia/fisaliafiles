@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.fisalia.files.R
 import com.fisalia.files.data.model.FileCategory
 import com.fisalia.files.data.model.FileItem
+import com.fisalia.files.data.model.UserMessageException
 import com.fisalia.files.data.model.ProtocolType
 import com.fisalia.files.data.model.StorageItem
 import kotlinx.coroutines.Dispatchers
@@ -540,7 +541,7 @@ class LocalFileRepository(private val context: Context) {
     ): LargeStorageUsageResult = withContext(Dispatchers.IO) {
         val root = Environment.getExternalStorageDirectory()
         if (!root.exists() || !root.canRead()) {
-            throw IllegalStateException("Storage is not available for scanning")
+            throw UserMessageException(R.string.error_storage_unavailable_for_scan)
         }
 
         val scanContext = currentCoroutineContext()

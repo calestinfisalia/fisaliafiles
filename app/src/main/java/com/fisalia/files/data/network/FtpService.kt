@@ -3,6 +3,8 @@ package com.fisalia.files.data.network
 import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.NetworkConnection
 import com.fisalia.files.data.model.ProtocolType
+import com.fisalia.files.data.model.UserMessageException
+import com.fisalia.files.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.commons.net.ftp.FTP
@@ -34,7 +36,7 @@ class FtpService {
         val reply = client.replyCode
         if (!FTPReply.isPositiveCompletion(reply)) {
             client.disconnect()
-            throw IllegalStateException("FTP server menolak koneksi. Kode balasan: $reply")
+            throw UserMessageException(R.string.error_ftp_server_rejected, listOf(reply))
         }
 
         val username = if (connection.isAnonymous || connection.username.isBlank()) "anonymous" else connection.username
@@ -42,7 +44,7 @@ class FtpService {
 
         if (!client.login(username, password)) {
             client.disconnect()
-            throw IllegalStateException("Login FTP gagal untuk pengguna: $username")
+            throw UserMessageException(R.string.error_ftp_login_failed, listOf(username))
         }
 
         client.enterLocalPassiveMode()
@@ -121,7 +123,7 @@ class FtpService {
             val basePath = connection.shareOrBasePath.trimEnd('/')
             val fullTarget = if (basePath.isBlank()) "/${relativePath.trimStart('/')}" else "$basePath/${relativePath.trimStart('/')}"
             val success = client.makeDirectory(fullTarget)
-            if (success) Result.success(Unit) else Result.failure(Exception("Gagal membuat folder di FTP"))
+            if (success) Result.success(Unit) else Result.failure(UserMessageException(R.string.error_ftp_create_folder))
         } catch (e: Exception) {
             Result.failure(e)
         } finally {
@@ -142,7 +144,7 @@ class FtpService {
             } else {
                 client.deleteFile(fullTarget)
             }
-            if (success) Result.success(Unit) else Result.failure(Exception("Gagal menghapus item di FTP"))
+            if (success) Result.success(Unit) else Result.failure(UserMessageException(R.string.error_ftp_delete_item))
         } catch (e: Exception) {
             Result.failure(e)
         } finally {
@@ -160,7 +162,7 @@ class FtpService {
             val oldFull = if (basePath.isBlank()) "/${oldRelativePath.trimStart('/')}" else "$basePath/${oldRelativePath.trimStart('/')}"
             val newFull = if (basePath.isBlank()) "/${newRelativePath.trimStart('/')}" else "$basePath/${newRelativePath.trimStart('/')}"
             val success = client.rename(oldFull, newFull)
-            if (success) Result.success(Unit) else Result.failure(Exception("Gagal mengubah nama file di FTP"))
+            if (success) Result.success(Unit) else Result.failure(UserMessageException(R.string.error_ftp_rename_item))
         } catch (e: Exception) {
             Result.failure(e)
         } finally {
