@@ -1,5 +1,9 @@
 package com.fisalia.files.data.network
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.util.Log
 import com.fisalia.files.data.local.FileOperationsHelper
 import com.fisalia.files.data.model.FileItem
@@ -19,7 +23,9 @@ import com.hierynomus.smbj.session.Session
 import com.hierynomus.smbj.share.DiskShare
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -339,6 +345,110 @@ class SmbService {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    fun streamEmbeddedThumbnail(
+        connection: NetworkConnection,
+        remotePath: String,
+        outputStream: OutputStream,
+        isHead: Boolean = false
+    ): Boolean {
+        val extension = remotePath.substringAfterLast('.', "").lowercase()
+        if (extension != "jpg" && extension != "jpeg") return false
+
+        val (conn, session) = connect(connection)
+        try {
+            val share = session.connectShare(connection.shareOrBasePath) as DiskShare
+            try {
+                val cleanPath = remotePath.trim('/').replace('/', '\\')
+                val smbFile = share.openFile(
+                    cleanPath,
+                    EnumSet.of(AccessMask.FILE_READ_DATA, AccessMask.FILE_READ_ATTRIBUTES),
+                    null,
+                    SMB2ShareAccess.ALL,
+                    SMB2CreateDisposition.FILE_OPEN,
+                    null
+                )
+                try {
+                    val thumbnail = try {
+                        BufferedInputStream(smbFile.inputStream, 16 * 1024).use { input ->
+                            val exif = ExifInterface(input)
+                            if (!exif.hasThumbnail() || !exif.isThumbnailCompressed) {
+                                null
+                            } else {
+                                orientThumbnail(
+                                    exif.getThumbnailBytes() ?: return@use null,
+                                    exif.getAttributeInt(
+                                        ExifInterface.TAG_ORIENTATION,
+                                        ExifInterface.ORIENTATION_NORMAL
+                                    )
+                                )
+                            }
+                        }
+                    } catch (error: Exception) {
+                        Log.w("SmbService", "Could not read embedded SMB image thumbnail", error)
+                        null
+                    } ?: return false
+
+                    val header = "HTTP/1.1 200 OK\r\n" +
+                        "Content-Type: image/jpeg\r\n" +
+                        "Content-Length: ${thumbnail.size}\r\n" +
+                        "Connection: close\r\n\r\n"
+                    outputStream.write(header.toByteArray(Charsets.UTF_8))
+                    if (!isHead) outputStream.write(thumbnail)
+                    outputStream.flush()
+                    return true
+                } finally {
+                    smbFile.close()
+                }
+            } finally {
+                share.close()
+            }
+        } finally {
+            session.close()
+            conn.close()
+        }
+    }
+
+    private fun orientThumbnail(bytes: ByteArray, orientation: Int): ByteArray? {
+        if (orientation == ExifInterface.ORIENTATION_NORMAL ||
+            orientation == ExifInterface.ORIENTATION_UNDEFINED
+        ) {
+            return bytes
+        }
+
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.setRotate(90f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.setRotate(-90f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
+            else -> return bytes
+        }
+
+        val oriented = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        return try {
+            ByteArrayOutputStream().use { output ->
+                if (!oriented.compress(Bitmap.CompressFormat.JPEG, 85, output)) {
+                    null
+                } else {
+                    output.toByteArray()
+                }
+            }
+        } finally {
+            oriented.recycle()
+            if (oriented !== bitmap) bitmap.recycle()
         }
     }
 

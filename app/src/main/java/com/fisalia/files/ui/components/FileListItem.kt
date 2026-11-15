@@ -284,7 +284,7 @@ fun FileLeadingThumbnail(fileItem: FileItem, modifier: Modifier = Modifier) {
     val thumbnailModel by androidx.compose.runtime.produceState<Any?>(
         initialValue = null,
         key1 = fileItem.path,
-        key2 = fileItem.protocol
+        key2 = "${fileItem.protocol}:${fileItem.connectionId}:${fileItem.size}:${fileItem.lastModified}"
     ) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             if (fileItem.protocol == ProtocolType.LOCAL) {
@@ -324,7 +324,7 @@ fun FileLeadingThumbnail(fileItem: FileItem, modifier: Modifier = Modifier) {
                 .size(128, 128)
                 .crossfade(false)
             if (smbThumbnailKey != null) {
-                builder.memoryCacheKey(smbThumbnailKey)
+                builder.memoryCacheKey("$smbThumbnailKey:128")
                     .diskCacheKey(smbThumbnailKey)
             }
             builder.build()

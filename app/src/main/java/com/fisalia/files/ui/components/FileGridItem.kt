@@ -104,7 +104,7 @@ fun FileGridItem(
         val thumbnailModel by androidx.compose.runtime.produceState<Any?>(
             initialValue = null,
             key1 = fileItem.path,
-            key2 = fileItem.protocol
+            key2 = "${fileItem.protocol}:${fileItem.connectionId}:${fileItem.size}:${fileItem.lastModified}"
         ) {
             value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 if (fileItem.protocol == ProtocolType.LOCAL) {
@@ -151,7 +151,7 @@ fun FileGridItem(
                         .size(320, 320)
                         .crossfade(false)
                     if (smbThumbnailKey != null) {
-                        builder.memoryCacheKey(smbThumbnailKey)
+                        builder.memoryCacheKey("$smbThumbnailKey:320")
                             .diskCacheKey(smbThumbnailKey)
                     }
                     builder.build()

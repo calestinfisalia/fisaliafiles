@@ -96,6 +96,7 @@ import com.fisalia.files.ui.theme.GoogleYellow
 class MainActivity : ComponentActivity() {
 
     private var hasStoragePermission by mutableStateOf(false)
+    private var appliedWallpaperBackground: Boolean? = null
 
     private val manageStorageLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -115,6 +116,7 @@ class MainActivity : ComponentActivity() {
         checkPermission()
 
         val settingsPrefs = SettingsPreferences.getInstance(applicationContext)
+        applyWallpaperBackground(settingsPrefs.wallpaperBackground.value)
 
         setContent {
             val appTheme by settingsPrefs.theme.collectAsState()
@@ -127,15 +129,7 @@ class MainActivity : ComponentActivity() {
                 com.fisalia.files.data.local.AppTheme.DARK -> true
             }
 
-            LaunchedEffect(wallpaperBg) {
-                if (wallpaperBg) {
-                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                } else {
-                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
-                    window.setBackgroundDrawable(null)
-                }
-            }
+            LaunchedEffect(wallpaperBg) { applyWallpaperBackground(wallpaperBg) }
 
             FisaliaFilesTheme(
                 appTheme = appTheme,
@@ -176,6 +170,20 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkPermission()
+    }
+
+    private fun applyWallpaperBackground(enabled: Boolean) {
+        if (appliedWallpaperBackground == enabled) return
+        appliedWallpaperBackground = enabled
+        if (enabled) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            window.setBackgroundDrawable(
+                android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+            )
+        } else {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
+            window.setBackgroundDrawable(null)
+        }
     }
 
     private fun checkPermission() {

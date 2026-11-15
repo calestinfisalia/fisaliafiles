@@ -109,14 +109,25 @@ class MediaStreamingServer private constructor() {
                 val connection = connPrefs.getConnectionById(connId)
 
                 if (connection != null && connection.type == ProtocolType.SMB) {
-                    smbService.streamFile(
-                        connection = connection,
-                        remotePath = remotePath,
-                        rangeStart = rangeStart,
-                        rangeEnd = rangeEnd,
-                        outputStream = s.getOutputStream(),
-                        isHead = method == "HEAD"
-                    )
+                    val outputStream = s.getOutputStream()
+                    val isHead = method == "HEAD"
+                    val servedThumbnail = queryParams.containsKey("thumbnailVersion") &&
+                        smbService.streamEmbeddedThumbnail(
+                            connection = connection,
+                            remotePath = remotePath,
+                            outputStream = outputStream,
+                            isHead = isHead
+                        )
+                    if (!servedThumbnail) {
+                        smbService.streamFile(
+                            connection = connection,
+                            remotePath = remotePath,
+                            rangeStart = rangeStart,
+                            rangeEnd = rangeEnd,
+                            outputStream = outputStream,
+                            isHead = isHead
+                        )
+                    }
                 } else {
                     val notFound = "HTTP/1.1 404 Connection Not Found\r\nConnection: close\r\n\r\n"
                     s.getOutputStream().write(notFound.toByteArray())
