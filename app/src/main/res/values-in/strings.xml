@@ -45,7 +45,7 @@
     <string name="storage_devices_title">Semua penyimpanan</string>
     <string name="internal_storage">Penyimpanan internal</string>
     <string name="sd_card">Kartu SD</string>
-    <string name="storage_free">%1$s bebas dari %2$s</string>
+    <string name="storage_free">Sisa %1$s</string>
     <string name="storage_used">%1$s digunakan dari %2$s</string>
 
     <!-- Collections -->
@@ -246,4 +246,42 @@
     <string name="action_move_to_safe">Pindahkan ke Folder Aman</string>
     <string name="action_favorite">Tambah ke Favorit</string>
     <string name="action_unfavorite">Hapus dari Favorit</string>
+    <string name="action_close">Tutup</string>
+    <string name="action_menu">Menu</string>
+    <string name="breadcrumb_home">Beranda</string>
+    <string name="btn_create">Buat</string>
+    <string name="input_folder_name_label">Nama folder</string>
+    <string name="input_new_name_label">Nama baru</string>
+    <string name="dialog_delete_title">Konfirmasi penghapusan</string>
+    <string name="file_details_title">Detail file</string>
+    <string name="file_details_name">Nama</string>
+    <string name="file_details_type">Tipe</string>
+    <string name="file_details_location">Lokasi</string>
+    <string name="file_details_size">Ukuran</string>
+    <string name="file_details_modified">Diubah</string>
+    <string name="file_details_protocol">Protokol</string>
+    <string name="file_label">File</string>
+    <string name="connection_dialog_add_title">Tambah server jaringan</string>
+    <string name="connection_dialog_edit_title">Edit server jaringan</string>
+    <string name="archive_name_format">Arsip_%1$s</string>
+    <string name="storage_free_generic">Ruang kosong</string>
+    <string name="category_archives">Arsip</string>
+    <string name="player_subtitles">Subtitle</string>
+    <string name="settings_home_section">Sesuaikan beranda</string>
+    <string name="action_customize_home">Sesuaikan beranda</string>
+    <string name="settings_home_recents">File terbaru</string>
+    <string name="settings_home_recents_desc">Tampilkan file yang baru dibuka di beranda</string>
+    <string name="settings_home_categories">Kategori</string>
+    <string name="settings_home_categories_desc">Tampilkan kategori file di beranda</string>
+    <string name="settings_home_collections">Koleksi</string>
+    <string name="settings_home_collections_desc">Tampilkan Favorit dan Folder Aman di beranda</string>
+    <string name="settings_home_storage">Perangkat penyimpanan</string>
+    <string name="settings_home_storage_desc">Tampilkan pintasan penyimpanan di beranda</string>
+    <string name="recents_type_photo">Foto</string>
+    <string name="recents_type_video">Video</string>
+    <string name="toast_copied_to_clipboard">Disalin ke papan klip</string>
+    <string name="toast_moved_to_clipboard">Dipotong ke papan klip</string>
+    <string name="toast_moved_to_safe">Dipindahkan ke Folder Aman</string>
+    <string name="player_fullscreen">Layar penuh</string>
+    <string name="player_exit_fullscreen">Keluar dari layar penuh</string>
 </resources>

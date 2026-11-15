@@ -350,7 +350,12 @@ fun ExplorerScreen(
 
                         if (state.activeConnection == null) {
                             IconButton(onClick = {
-                                viewModel.zipSelectedItems("Arsip_${System.currentTimeMillis()}")
+                                viewModel.zipSelectedItems(
+                                    context.getString(
+                                        R.string.archive_name_format,
+                                        System.currentTimeMillis()
+                                    )
+                                )
                             }) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(Icons.Default.Archive, contentDescription = stringResource(R.string.action_zip))
@@ -595,7 +600,11 @@ fun ExplorerScreen(
                                     viewModel.moveToSafeFolder(
                                         item,
                                         onSuccess = {
-                                            android.widget.Toast.makeText(context, "Dipindahkan ke Folder Aman", android.widget.Toast.LENGTH_SHORT).show()
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                context.getString(R.string.toast_moved_to_safe),
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
                                         },
                                         onError = { err ->
                                             android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()

@@ -315,7 +315,7 @@ fun VideoPlayerScreen(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Tutup",
+                            contentDescription = stringResource(R.string.action_close),
                             tint = Color.White
                         )
                     }
@@ -341,7 +341,7 @@ fun VideoPlayerScreen(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Subtitles,
-                            contentDescription = "Subtitle",
+                            contentDescription = stringResource(R.string.player_subtitles),
                             tint = if (subtitlesEnabled) GoogleBluePrimary else Color.White.copy(alpha = 0.5f)
                         )
                     }
@@ -476,7 +476,10 @@ fun VideoPlayerScreen(
                         ) {
                             Icon(
                                 imageVector = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                                contentDescription = if (isFullscreen) "Exit Fullscreen" else "Fullscreen",
+                                contentDescription = stringResource(
+                                    if (isFullscreen) R.string.player_exit_fullscreen
+                                    else R.string.player_fullscreen
+                                ),
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
                             )

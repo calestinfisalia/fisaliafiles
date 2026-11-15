@@ -73,7 +73,7 @@ fun CreateFolderDialog(
             OutlinedTextField(
                 value = folderName,
                 onValueChange = { folderName = it },
-                label = { Text("Nama Folder") },
+                label = { Text(stringResource(R.string.input_folder_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -83,7 +83,7 @@ fun CreateFolderDialog(
                 onClick = { if (folderName.isNotBlank()) onConfirm(folderName.trim()) },
                 enabled = folderName.isNotBlank()
             ) {
-                Text("Buat")
+                Text(stringResource(R.string.btn_create))
             }
         },
         dismissButton = {
@@ -109,7 +109,7 @@ fun RenameDialog(
             OutlinedTextField(
                 value = newName,
                 onValueChange = { newName = it },
-                label = { Text("Nama Baru") },
+                label = { Text(stringResource(R.string.input_new_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -139,7 +139,7 @@ fun DeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Konfirmasi Hapus") },
+        title = { Text(stringResource(R.string.dialog_delete_title)) },
         text = {
             val message = if (itemCount == 1 && singleFileName != null) {
                 stringResource(R.string.dialog_delete_single, singleFileName)
@@ -177,21 +177,37 @@ fun FileDetailsBottomSheet(
                 .padding(20.dp)
         ) {
             Text(
-                text = "Detail File",
+                text = stringResource(R.string.file_details_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            DetailRow(label = "Nama", value = fileItem.name)
-            DetailRow(label = "Tipe", value = if (fileItem.isDirectory) "Direktori / Folder" else fileItem.extension.uppercase().ifEmpty { "File" })
-            DetailRow(label = "Lokasi", value = fileItem.path)
+            DetailRow(label = stringResource(R.string.file_details_name), value = fileItem.name)
+            DetailRow(
+                label = stringResource(R.string.file_details_type),
+                value = if (fileItem.isDirectory) {
+                    stringResource(R.string.folder_label)
+                } else {
+                    fileItem.extension.uppercase().ifEmpty { stringResource(R.string.file_label) }
+                }
+            )
+            DetailRow(label = stringResource(R.string.file_details_location), value = fileItem.path)
             if (!fileItem.isDirectory) {
-                DetailRow(label = "Ukuran", value = FileOperationsHelper.formatFileSize(fileItem.size))
+                DetailRow(
+                    label = stringResource(R.string.file_details_size),
+                    value = FileOperationsHelper.formatFileSize(fileItem.size)
+                )
             }
-            DetailRow(label = "Diubah", value = FileOperationsHelper.formatDate(fileItem.lastModified))
-            DetailRow(label = "Protokol", value = fileItem.protocol.name)
+            DetailRow(
+                label = stringResource(R.string.file_details_modified),
+                value = FileOperationsHelper.formatDate(fileItem.lastModified)
+            )
+            DetailRow(
+                label = stringResource(R.string.file_details_protocol),
+                value = fileItem.protocol.name
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -250,7 +266,12 @@ fun AddServerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (initialConnection == null) "Tambah Server Jaringan" else "Edit Server Jaringan")
+            Text(
+                stringResource(
+                    if (initialConnection == null) R.string.connection_dialog_add_title
+                    else R.string.connection_dialog_edit_title
+                )
+            )
         },
         text = {
             Column(

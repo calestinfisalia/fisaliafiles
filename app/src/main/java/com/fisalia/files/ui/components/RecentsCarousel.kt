@@ -128,6 +128,9 @@ private fun RecentFileCard(
 ) {
     val context = LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
+    val defaultFolderName = stringResource(
+        if (fileItem.isVideo) R.string.recents_type_video else R.string.recents_type_photo
+    )
 
     val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, key1 = fileItem.path) {
         value = withContext(Dispatchers.IO) {
@@ -145,11 +148,11 @@ private fun RecentFileCard(
         }
     }
 
-    val folderName = remember(fileItem.path) {
+    val folderName = remember(fileItem.path, defaultFolderName) {
         try {
-            File(fileItem.path).parentFile?.name ?: if (fileItem.isVideo) "Video" else "Image"
+            File(fileItem.path).parentFile?.name ?: defaultFolderName
         } catch (_: Throwable) {
-            if (fileItem.isVideo) "Video" else "Image"
+            defaultFolderName
         }
     }
 
@@ -202,7 +205,7 @@ private fun RecentFileCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Options",
+                        contentDescription = stringResource(R.string.more_options),
                         tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )

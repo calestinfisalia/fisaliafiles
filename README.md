@@ -15,7 +15,7 @@ Play media without installing a third-party app:
 - **Video player** powered by AndroidX Media3 ExoPlayer, with play/pause, 10-second seek controls, a progress slider, and an option to open videos in another app.
 - **Audio player** with album art, playback controls, and a progress slider. Supports common formats including MP3, AAC, FLAC, WAV, M4A, and OGG.
 - Full-screen audio playback supports horizontal swiping between songs, like the image viewer.
-- **Image viewer** with pinch-to-zoom (up to 5x), panning, sharing, and an option to open images in another app.
+- **Image viewer** with pinch-to-zoom (up to 5x), panning, sharing, Favorites for local images, and an option to open images in another app.
 - Swipe between media items while viewing or playing them.
 
 ### 📂 Browse and storage navigation
@@ -27,6 +27,8 @@ Play media without installing a third-party app:
 - Browse Trash and review large files on their own pages.
 - Scan for large files and folders in a dedicated Free up space page; scanning starts on demand and reports progress.
 - See folder item counts in list and grid views, including SMB shares.
+- Use square 1:1 tiles in file grid view.
+- Customize the home screen by showing or hiding Recent files, Categories, Collections, and Storage devices in Settings.
 - Load SMB image previews at display size, use embedded JPEG previews when available, and reuse cached thumbnails.
 
 ### 🌐 System-language localization

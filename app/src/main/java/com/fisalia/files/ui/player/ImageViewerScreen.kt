@@ -18,11 +18,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +47,10 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.fisalia.files.R
 import com.fisalia.files.data.local.FileOperationsHelper
+import com.fisalia.files.data.local.SettingsPreferences
 import com.fisalia.files.data.model.FileItem
+import com.fisalia.files.data.model.ProtocolType
+import com.fisalia.files.ui.theme.GoogleYellow
 import java.io.File
 
 @Composable
@@ -58,6 +64,9 @@ fun ImageViewerScreen(
 ) {
     val context = LocalContext.current
     val targetModel: Any = playbackUri ?: (localPlaybackFile ?: File(fileItem.path))
+    val settingsPrefs = remember(context) { SettingsPreferences.getInstance(context) }
+    val favoritePaths by settingsPrefs.favoriteFiles.collectAsState()
+    val isFavorite = fileItem.path in favoritePaths
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -146,6 +155,18 @@ fun ImageViewerScreen(
                     color = Color.White.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+
+            if (fileItem.protocol == ProtocolType.LOCAL) {
+                IconButton(onClick = { settingsPrefs.toggleFavorite(fileItem.path) }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarOutline,
+                        contentDescription = stringResource(
+                            if (isFavorite) R.string.action_unfavorite else R.string.action_favorite
+                        ),
+                        tint = if (isFavorite) GoogleYellow else Color.White
+                    )
+                }
             }
 
             IconButton(onClick = {

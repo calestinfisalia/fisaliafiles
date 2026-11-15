@@ -69,6 +69,10 @@ fun SettingsScreen(
     val showHiddenFiles by settingsPrefs.showHiddenFiles.collectAsState()
     val wallpaperBg by settingsPrefs.wallpaperBackground.collectAsState()
     val isGridView by settingsPrefs.isGridView.collectAsState()
+    val showHomeRecents by settingsPrefs.showHomeRecents.collectAsState()
+    val showHomeCategories by settingsPrefs.showHomeCategories.collectAsState()
+    val showHomeCollections by settingsPrefs.showHomeCollections.collectAsState()
+    val showHomeStorage by settingsPrefs.showHomeStorage.collectAsState()
     val context = LocalContext.current
     val versionName = remember {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
@@ -160,6 +164,45 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_wallpaper_bg_desc),
                 checked = wallpaperBg,
                 onCheckedChange = { settingsPrefs.setWallpaperBackground(it) }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_home_section))
+
+            SettingsSwitchItem(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.settings_home_recents),
+                subtitle = stringResource(R.string.settings_home_recents_desc),
+                checked = showHomeRecents,
+                onCheckedChange = { settingsPrefs.setShowHomeRecents(it) }
+            )
+
+            SettingsSwitchItem(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.settings_home_categories),
+                subtitle = stringResource(R.string.settings_home_categories_desc),
+                checked = showHomeCategories,
+                onCheckedChange = { settingsPrefs.setShowHomeCategories(it) }
+            )
+
+            SettingsSwitchItem(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.settings_home_collections),
+                subtitle = stringResource(R.string.settings_home_collections_desc),
+                checked = showHomeCollections,
+                onCheckedChange = { settingsPrefs.setShowHomeCollections(it) }
+            )
+
+            SettingsSwitchItem(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.settings_home_storage),
+                subtitle = stringResource(R.string.settings_home_storage_desc),
+                checked = showHomeStorage,
+                onCheckedChange = { settingsPrefs.setShowHomeStorage(it) }
             )
 
             HorizontalDivider(

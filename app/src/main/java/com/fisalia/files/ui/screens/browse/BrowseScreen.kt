@@ -66,7 +66,6 @@ import com.fisalia.files.ui.components.SafeFolderPinDialog
 import com.fisalia.files.ui.components.StorageGridCard
 import com.fisalia.files.ui.player.ActiveMedia
 import com.fisalia.files.ui.theme.GoogleBluePrimary
-import com.fisalia.files.ui.theme.GoogleYellow
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,6 +78,10 @@ fun BrowseScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    val showHomeRecents by viewModel.settingsPrefs.showHomeRecents.collectAsState()
+    val showHomeCategories by viewModel.settingsPrefs.showHomeCategories.collectAsState()
+    val showHomeCollections by viewModel.settingsPrefs.showHomeCollections.collectAsState()
+    val showHomeStorage by viewModel.settingsPrefs.showHomeStorage.collectAsState()
     val context = LocalContext.current
     var showSafeFolderPinDialog by remember { mutableStateOf(false) }
     var isSettingSafePin by remember { mutableStateOf(false) }
@@ -203,7 +206,12 @@ fun BrowseScreen(
                                     },
                                     onActionDetails = { itemForDetails = item },
                                     onActionZip = {
-                                        viewModel.zipSelectedItems("Arsip_${File(item.name).nameWithoutExtension}")
+                                        viewModel.zipSelectedItems(
+                                            context.getString(
+                                                R.string.archive_name_format,
+                                                File(item.name).nameWithoutExtension
+                                            )
+                                        )
                                     },
                                     onActionExtract = {
                                         viewModel.extractArchive(item) { destination ->
@@ -216,11 +224,19 @@ fun BrowseScreen(
                                     },
                                     onActionCopy = {
                                         viewModel.setClipboard(listOf(item), isCut = false)
-                                        android.widget.Toast.makeText(context, "${item.name} disalin", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_copied_to_clipboard),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
                                     },
                                     onActionMove = {
                                         viewModel.setClipboard(listOf(item), isCut = true)
-                                        android.widget.Toast.makeText(context, "${item.name} dipotong", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            context.getString(R.string.toast_moved_to_clipboard),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 )
                             }
@@ -237,7 +253,7 @@ fun BrowseScreen(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         // Recents Carousel (Baru-baru ini)
-                        if (state.recentFiles.isNotEmpty()) {
+                        if (showHomeRecents && state.recentFiles.isNotEmpty()) {
                             RecentsCarousel(
                                 recentFiles = state.recentFiles,
                                 onItemClick = { item ->
@@ -261,173 +277,177 @@ fun BrowseScreen(
                         }
 
                         // Categories Grid (Google Files iconic tiles with calculated sizes)
-                        CategoryGrid(
-                            onCategoryClick = { category ->
-                                viewModel.openCategory(category)
-                            },
-                            categorySizes = state.categorySizes
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Koleksi / Collections Section (Favorit, Folder Aman)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.collections_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                        if (showHomeCategories) {
+                            CategoryGrid(
+                                onCategoryClick = { category ->
+                                    viewModel.openCategory(category)
+                                },
+                                categorySizes = state.categorySizes
                             )
-
-                            Box {
-                                IconButton(onClick = { showCollectionsMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = "Collections menu",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                DropdownMenu(
-                                    expanded = showCollectionsMenu,
-                                    onDismissRequest = { showCollectionsMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Pengaturan Koleksi") },
-                                        onClick = {
-                                            showCollectionsMenu = false
-                                            onOpenSettings()
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Atur PIN Folder Aman") },
-                                        onClick = {
-                                            showCollectionsMenu = false
-                                            isSettingSafePin = true
-                                            showSafeFolderPinDialog = true
-                                        }
-                                    )
-                                }
-                            }
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            CollectionCard(
-                                title = stringResource(R.string.favorites),
-                                icon = Icons.Default.StarOutline,
-                                iconColor = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = { viewModel.openFavorites() }
-                            )
-
-                            CollectionCard(
-                                title = stringResource(R.string.safe_folder),
-                                icon = Icons.Default.Lock,
-                                iconColor = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    val savedPin = viewModel.settingsPrefs.getSafeFolderPin()
-                                    isSettingSafePin = savedPin == null
-                                    showSafeFolderPinDialog = true
-                                }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Storage Devices Section (Semua penyimpanan - 2 columns grid matching Google Files)
-                        Text(
-                            text = stringResource(R.string.storage_devices_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                        )
-
-                        // 2 Columns Storage Layout
-                        val primaryStorage = state.storageDevices.firstOrNull()
-                        val sdCardStorage = state.storageDevices.getOrNull(1)
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
+                        if (showHomeCollections) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Internal storage
-                                val internalFree = if (primaryStorage != null && primaryStorage.freeBytes > 0L) {
-                                    "${FileOperationsHelper.formatFileSize(primaryStorage.freeBytes)} free"
-                                } else {
-                                    "Free space"
-                                }
-
-                                StorageGridCard(
-                                    title = stringResource(R.string.internal_storage),
-                                    subtitle = internalFree,
-                                    icon = Icons.Default.PhoneAndroid,
-                                    onClick = {
-                                        if (primaryStorage != null) {
-                                            viewModel.openStorageDevice(primaryStorage)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
+                                Text(
+                                    text = stringResource(R.string.collections_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
 
-                                // SD Card or Other storage if no SD Card
-                                if (sdCardStorage != null) {
-                                    val sdFree = if (sdCardStorage.freeBytes > 0L) {
-                                        "${FileOperationsHelper.formatFileSize(sdCardStorage.freeBytes)} free"
-                                    } else {
-                                        "Free space"
+                                Box {
+                                    IconButton(onClick = { showCollectionsMenu = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = stringResource(R.string.more_options),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                    StorageGridCard(
-                                        title = stringResource(R.string.sd_card),
-                                        subtitle = sdFree,
-                                        icon = Icons.Default.SdCard,
-                                        onClick = { viewModel.openStorageDevice(sdCardStorage) },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                } else {
-                                    // Network storage in place of SD card
-                                    StorageGridCard(
-                                        title = stringResource(R.string.drawer_network),
-                                        subtitle = stringResource(R.string.drawer_network_sub),
-                                        icon = Icons.Default.Dns,
-                                        onClick = onOpenNetworkStorage,
-                                        modifier = Modifier.weight(1f)
-                                    )
+
+                                    DropdownMenu(
+                                        expanded = showCollectionsMenu,
+                                        onDismissRequest = { showCollectionsMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.action_customize_home)) },
+                                            onClick = {
+                                                showCollectionsMenu = false
+                                                onOpenSettings()
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.safe_folder_set_pin)) },
+                                            onClick = {
+                                                showCollectionsMenu = false
+                                                isSettingSafePin = true
+                                                showSafeFolderPinDialog = true
+                                            }
+                                        )
+                                    }
                                 }
                             }
 
-                            // If SD card was shown above, show network storage on second row
-                            if (sdCardStorage != null) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                CollectionCard(
+                                    title = stringResource(R.string.favorites),
+                                    icon = Icons.Default.StarOutline,
+                                    iconColor = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.openFavorites() }
+                                )
+
+                                CollectionCard(
+                                    title = stringResource(R.string.safe_folder),
+                                    icon = Icons.Default.Lock,
+                                    iconColor = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = {
+                                        val savedPin = viewModel.settingsPrefs.getSafeFolderPin()
+                                        isSettingSafePin = savedPin == null
+                                        showSafeFolderPinDialog = true
+                                    }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        if (showHomeStorage) {
+                            Text(
+                                text = stringResource(R.string.storage_devices_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                            )
+
+                            val primaryStorage = state.storageDevices.firstOrNull()
+                            val sdCardStorage = state.storageDevices.getOrNull(1)
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
+                                    val internalFree = if (primaryStorage != null && primaryStorage.freeBytes > 0L) {
+                                        stringResource(
+                                            R.string.storage_free,
+                                            FileOperationsHelper.formatFileSize(primaryStorage.freeBytes)
+                                        )
+                                    } else {
+                                        stringResource(R.string.storage_free_generic)
+                                    }
+
                                     StorageGridCard(
-                                        title = stringResource(R.string.drawer_network),
-                                        subtitle = stringResource(R.string.drawer_network_sub),
-                                        icon = Icons.Default.Dns,
-                                        onClick = onOpenNetworkStorage,
+                                        title = stringResource(R.string.internal_storage),
+                                        subtitle = internalFree,
+                                        icon = Icons.Default.PhoneAndroid,
+                                        onClick = {
+                                            if (primaryStorage != null) {
+                                                viewModel.openStorageDevice(primaryStorage)
+                                            }
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
-                                    Spacer(modifier = Modifier.weight(1f))
+
+                                    if (sdCardStorage != null) {
+                                        val sdFree = if (sdCardStorage.freeBytes > 0L) {
+                                            stringResource(
+                                                R.string.storage_free,
+                                                FileOperationsHelper.formatFileSize(sdCardStorage.freeBytes)
+                                            )
+                                        } else {
+                                            stringResource(R.string.storage_free_generic)
+                                        }
+                                        StorageGridCard(
+                                            title = stringResource(R.string.sd_card),
+                                            subtitle = sdFree,
+                                            icon = Icons.Default.SdCard,
+                                            onClick = { viewModel.openStorageDevice(sdCardStorage) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    } else {
+                                        StorageGridCard(
+                                            title = stringResource(R.string.drawer_network),
+                                            subtitle = stringResource(R.string.drawer_network_sub),
+                                            icon = Icons.Default.Dns,
+                                            onClick = onOpenNetworkStorage,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+
+                                if (sdCardStorage != null) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        StorageGridCard(
+                                            title = stringResource(R.string.drawer_network),
+                                            subtitle = stringResource(R.string.drawer_network_sub),
+                                            icon = Icons.Default.Dns,
+                                            onClick = onOpenNetworkStorage,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
                                 }
                             }
                         }

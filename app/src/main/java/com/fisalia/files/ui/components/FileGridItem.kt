@@ -38,11 +38,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.fisalia.files.R
 import com.fisalia.files.data.local.ThumbnailHelper
 import com.fisalia.files.data.model.FileItem
 import com.fisalia.files.data.model.ProtocolType
@@ -135,7 +137,7 @@ fun FileGridItem(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.84f)
+                .aspectRatio(1f)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
@@ -237,14 +239,16 @@ fun FileGridItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                val subtitle = remember(fileItem) {
-                    if (fileItem.isDirectory) {
-                        if (fileItem.childCount >= 0) "${fileItem.childCount} item" else "Folder"
+                val subtitle = if (fileItem.isDirectory) {
+                    if (fileItem.childCount >= 0) {
+                        stringResource(R.string.folder_item_count, fileItem.childCount)
                     } else {
-                        fileItem.path.trimEnd('/', '\\')
-                            .substringBeforeLast('/', "")
-                            .substringAfterLast('/')
+                        stringResource(R.string.folder_label)
                     }
+                } else {
+                    fileItem.path.trimEnd('/', '\\')
+                        .substringBeforeLast('/', "")
+                        .substringAfterLast('/')
                 }
                 if (subtitle.isNotBlank()) {
                     Text(

@@ -30,6 +30,23 @@ class SettingsPreferences private constructor(context: Context) {
     private val _isGridView = MutableStateFlow(prefs.getBoolean(KEY_IS_GRID_VIEW, false))
     val isGridView: StateFlow<Boolean> = _isGridView.asStateFlow()
 
+    private val _favoriteFiles = MutableStateFlow(
+        prefs.getStringSet(KEY_FAVORITES, emptySet())?.toSet() ?: emptySet()
+    )
+    val favoriteFiles: StateFlow<Set<String>> = _favoriteFiles.asStateFlow()
+
+    private val _showHomeRecents = MutableStateFlow(prefs.getBoolean(KEY_HOME_RECENTS, true))
+    val showHomeRecents: StateFlow<Boolean> = _showHomeRecents.asStateFlow()
+
+    private val _showHomeCategories = MutableStateFlow(prefs.getBoolean(KEY_HOME_CATEGORIES, true))
+    val showHomeCategories: StateFlow<Boolean> = _showHomeCategories.asStateFlow()
+
+    private val _showHomeCollections = MutableStateFlow(prefs.getBoolean(KEY_HOME_COLLECTIONS, true))
+    val showHomeCollections: StateFlow<Boolean> = _showHomeCollections.asStateFlow()
+
+    private val _showHomeStorage = MutableStateFlow(prefs.getBoolean(KEY_HOME_STORAGE, true))
+    val showHomeStorage: StateFlow<Boolean> = _showHomeStorage.asStateFlow()
+
     private fun loadTheme(): AppTheme {
         val themeName = prefs.getString(KEY_APP_THEME, AppTheme.SYSTEM.name) ?: AppTheme.SYSTEM.name
         return try {
@@ -65,7 +82,7 @@ class SettingsPreferences private constructor(context: Context) {
     }
 
     fun getFavorites(): Set<String> {
-        return prefs.getStringSet(KEY_FAVORITES, emptySet()) ?: emptySet()
+        return _favoriteFiles.value
     }
 
     fun toggleFavorite(path: String) {
@@ -75,7 +92,29 @@ class SettingsPreferences private constructor(context: Context) {
         } else {
             current.add(path)
         }
-        prefs.edit().putStringSet(KEY_FAVORITES, current).apply()
+        val updated = current.toSet()
+        prefs.edit().putStringSet(KEY_FAVORITES, updated).apply()
+        _favoriteFiles.value = updated
+    }
+
+    fun setShowHomeRecents(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_HOME_RECENTS, enabled).apply()
+        _showHomeRecents.value = enabled
+    }
+
+    fun setShowHomeCategories(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_HOME_CATEGORIES, enabled).apply()
+        _showHomeCategories.value = enabled
+    }
+
+    fun setShowHomeCollections(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_HOME_COLLECTIONS, enabled).apply()
+        _showHomeCollections.value = enabled
+    }
+
+    fun setShowHomeStorage(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_HOME_STORAGE, enabled).apply()
+        _showHomeStorage.value = enabled
     }
 
     fun getSafeFolderPin(): String? {
@@ -93,6 +132,10 @@ class SettingsPreferences private constructor(context: Context) {
         private const val KEY_WALLPAPER_BG = "wallpaper_background"
         private const val KEY_IS_GRID_VIEW = "view_mode_grid"
         private const val KEY_FAVORITES = "favorite_files"
+        private const val KEY_HOME_RECENTS = "home_show_recents"
+        private const val KEY_HOME_CATEGORIES = "home_show_categories"
+        private const val KEY_HOME_COLLECTIONS = "home_show_collections"
+        private const val KEY_HOME_STORAGE = "home_show_storage"
         private const val KEY_SAFE_PIN = "safe_folder_pin"
 
         @Volatile

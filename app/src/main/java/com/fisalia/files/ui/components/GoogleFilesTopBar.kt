@@ -80,7 +80,7 @@ fun GoogleFilesTopBar(
                 IconButton(onClick = onMenuClick) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu",
+                        contentDescription = stringResource(R.string.action_menu),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

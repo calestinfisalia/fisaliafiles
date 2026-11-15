@@ -164,7 +164,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
                     isSafeFolder = false,
                     currentPath = "",
                     basePath = "",
-                    rootName = "Recents",
+                    rootName = getApplication<Application>().getString(R.string.recents_title),
                     files = recents,
                     selectedItemIds = emptySet(),
                     isSelectionMode = false
@@ -235,7 +235,7 @@ class BrowseViewModel(application: Application) : AndroidViewModel(application) 
             it.copy(
                 activeCategory = category,
                 activeConnection = null,
-                rootName = category.title,
+                rootName = getApplication<Application>().getString(category.titleRes),
                 currentPath = "",
                 basePath = "",
                 isLoading = true,
