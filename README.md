@@ -27,7 +27,7 @@ Play media without installing a third-party app:
 - Browse Trash and review large files on their own pages.
 - Scan for large files and folders in a dedicated Free up space page; scanning starts on demand and reports progress.
 - See folder item counts in list and grid views, including SMB shares.
-- Load SMB image previews at display size and reuse cached thumbnails.
+- Load SMB image previews at display size, use embedded JPEG previews when available, and reuse cached thumbnails.
 
 ### 🌐 System-language localization
 
